@@ -224,23 +224,23 @@ const TasksPage = () => {
                 />
               </div>
             </div>
-            <Select value={filters.priority || ''} onValueChange={(value: string) => setFilters({ ...filters, priority: value as 'high' | 'medium' | 'low' || undefined })}>
+            <Select value={filters.priority || 'all'} onValueChange={(value: string) => setFilters({ ...filters, priority: value === 'all' ? undefined : value as 'high' | 'medium' | 'low' })}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Priorities</SelectItem>
+                <SelectItem value="all">All Priorities</SelectItem>
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filters.status || ''} onValueChange={(value: string) => setFilters({ ...filters, status: value as 'completed' | 'pending' || undefined })}>
+            <Select value={filters.status || 'all'} onValueChange={(value: string) => setFilters({ ...filters, status: value === 'all' ? undefined : value as 'completed' | 'pending' })}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Tasks</SelectItem>
+                <SelectItem value="all">All Tasks</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
