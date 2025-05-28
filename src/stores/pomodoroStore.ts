@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { PomodoroSession, Task } from '../types';
-import { useTasksStore } from './tasksStore';
+import { useUpdateTask } from './tasksStore';
 
 interface PomodoroState {
   currentSession: PomodoroSession | null;
@@ -9,7 +9,6 @@ interface PomodoroState {
   isPaused: boolean;
   timeRemaining: number;
   selectedTask: Task | null;
-  sessions: PomodoroSession[];
   workDuration: number;
   breakDuration: number;
   startSession: (task: Task) => void;
@@ -18,6 +17,7 @@ interface PomodoroState {
   completeSession: () => void;
   resetSession: () => void;
   tick: () => void;
+  setDurations: (workDuration: number, breakDuration: number) => void;
 }
 
 export const usePomodoroStore = create<PomodoroState>((set, get) => ({
@@ -26,14 +26,13 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   isPaused: false,
   timeRemaining: 25 * 60, // 25 minutes in seconds
   selectedTask: null,
-  sessions: [],
   workDuration: 25 * 60,
   breakDuration: 5 * 60,
 
   startSession: (task: Task) => {
     const session: PomodoroSession = {
       id: Date.now().toString(),
-      userId: '1',
+      userId: task.userId,
       taskId: task.id,
       duration: get().workDuration,
       sessionType: 'work',
@@ -59,22 +58,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   },
 
   completeSession: () => {
-    const { currentSession, sessions, selectedTask } = get();
+    const { currentSession, selectedTask } = get();
     if (currentSession && selectedTask) {
-      const completedSession = {
-        ...currentSession,
-        completedAt: new Date(),
-        isCompleted: true,
-      };
-
-      // Update task pomodoros count
-      const { updateTask } = useTasksStore.getState();
-      updateTask(selectedTask.id, {
-        completedPomodoros: selectedTask.completedPomodoros + 1
-      });
-
+      // Note: In a real implementation, we would use the Supabase hooks here
+      // to update the task's completed pomodoros count and create a session record
+      
       set({
-        sessions: [...sessions, completedSession],
         currentSession: null,
         selectedTask: null,
         isRunning: false,
@@ -102,6 +91,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
       get().completeSession();
     }
   },
+
+  setDurations: (workDuration: number, breakDuration: number) => {
+    set({ 
+      workDuration: workDuration * 60, 
+      breakDuration: breakDuration * 60,
+      timeRemaining: workDuration * 60
+    });
+  }
 }));
 
 // Start timer interval

@@ -1,21 +1,35 @@
 
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-const RegisterPage = () => {
-  const [email, setEmail] = useState('');
+const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const { signUp, loading } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if this is a password reset link
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      // Set the session with the tokens from the URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,19 +52,30 @@ const RegisterPage = () => {
       return;
     }
 
+    setLoading(true);
+
     try {
-      await signUp(email, password, fullName);
-      navigate('/');
-      toast({
-        title: 'Account created!',
-        description: 'Welcome to FocusFlow. Your productivity journey starts now.',
+      const { error } = await supabase.auth.updateUser({
+        password: password
       });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success!',
+        description: 'Your password has been updated successfully.',
+      });
+
+      // Redirect to login page
+      navigate('/login');
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create account. Please try again.',
+        description: error.message || 'Failed to update password.',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,39 +83,15 @@ const RegisterPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Join FocusFlow</CardTitle>
+          <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
           <CardDescription>
-            Create your account to start boosting your productivity
+            Enter your new password below
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="mt-1"
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1"
-                placeholder="Enter your email"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -98,7 +99,7 @@ const RegisterPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="mt-1"
-                placeholder="Enter your password"
+                placeholder="Enter your new password"
                 minLength={6}
               />
             </div>
@@ -111,24 +112,18 @@ const RegisterPage = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="mt-1"
-                placeholder="Confirm your password"
+                placeholder="Confirm your new password"
                 minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Updating...' : 'Update Password'}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
-          </p>
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default RegisterPage;
+export default ResetPasswordPage;

@@ -13,11 +13,13 @@ import {
   User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuthStore();
+  const { profile, signOut } = useAuthStore();
+  const { toast } = useToast();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -28,8 +30,20 @@ const Layout = () => {
   ];
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      await signOut();
+      navigate('/login');
+      toast({
+        title: 'Signed out',
+        description: 'You have been successfully signed out.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to sign out.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -37,7 +51,7 @@ const Layout = () => {
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg">
         <div className="flex items-center px-6 py-4 border-b">
-          <div className="text-xl font-bold text-gray-800">Productivity</div>
+          <div className="text-xl font-bold text-gray-800">FocusFlow</div>
         </div>
         
         <nav className="mt-6">
@@ -68,15 +82,18 @@ const Layout = () => {
           <div className="flex items-center space-x-3">
             <Avatar>
               <AvatarFallback>
-                <User className="h-4 w-4" />
+                {profile?.full_name 
+                  ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                  : <User className="h-4 w-4" />
+                }
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name || user?.email}
+                {profile?.full_name || profile?.email}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {user?.email}
+                {profile?.email}
               </p>
             </div>
             <Button

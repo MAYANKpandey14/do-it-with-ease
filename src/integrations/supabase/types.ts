@@ -9,7 +9,226 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      pomodoro_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_minutes: number
+          id: string
+          session_type: Database["public"]["Enums"]["session_type"] | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["session_status"] | null
+          task_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_minutes: number
+          id?: string
+          session_type?: Database["public"]["Enums"]["session_type"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+          task_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_minutes?: number
+          id?: string
+          session_type?: Database["public"]["Enums"]["session_type"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+          task_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pomodoro_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pomodoro_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          long_break_duration: number | null
+          long_break_interval: number | null
+          notifications_enabled: boolean | null
+          pomodoro_duration: number | null
+          short_break_duration: number | null
+          sound_enabled: boolean | null
+          theme: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          long_break_duration?: number | null
+          long_break_interval?: number | null
+          notifications_enabled?: boolean | null
+          pomodoro_duration?: number | null
+          short_break_duration?: number | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          long_break_duration?: number | null
+          long_break_interval?: number | null
+          notifications_enabled?: boolean | null
+          pomodoro_duration?: number | null
+          short_break_duration?: number | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          tag_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          tag_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          tag_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_tags_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed_pomodoros: number | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          estimated_pomodoros: number | null
+          id: string
+          is_completed: boolean | null
+          priority: Database["public"]["Enums"]["task_priority"] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_pomodoros?: number | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_pomodoros?: number | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_pomodoros?: number | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_pomodoros?: number | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +237,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      session_status: "active" | "paused" | "completed" | "cancelled"
+      session_type: "work" | "short_break" | "long_break"
+      task_priority: "low" | "medium" | "high"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +354,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      session_status: ["active", "paused", "completed", "cancelled"],
+      session_type: ["work", "short_break", "long_break"],
+      task_priority: ["low", "medium", "high"],
+    },
   },
 } as const

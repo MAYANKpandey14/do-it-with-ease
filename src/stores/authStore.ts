@@ -1,76 +1,187 @@
 
 import { create } from 'zustand';
-import { User } from '../types';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
+
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  theme: string;
+  pomodoro_duration: number;
+  short_break_duration: number;
+  long_break_duration: number;
+  long_break_interval: number;
+  notifications_enabled: boolean;
+  sound_enabled: boolean;
+}
 
 interface AuthState {
   user: User | null;
+  profile: Profile | null;
+  session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUser: (user: Partial<User>) => void;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  loadProfile: () => Promise<void>;
 }
-
-// Mock authentication for demo purposes
-const mockUsers = [
-  { id: '1', email: 'demo@example.com', name: 'Demo User' }
-];
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  profile: null,
+  session: null,
   loading: false,
   isAuthenticated: false,
 
   signIn: async (email: string, password: string) => {
     set({ loading: true });
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user = mockUsers.find(u => u.email === email);
-    if (user && password === 'password') {
-      set({ user, isAuthenticated: true, loading: false });
-      localStorage.setItem('auth_user', JSON.stringify(user));
-    } else {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      set({ 
+        user: data.user, 
+        session: data.session,
+        isAuthenticated: true,
+        loading: false 
+      });
+
+      // Load profile after successful sign in
+      await get().loadProfile();
+    } catch (error) {
       set({ loading: false });
-      throw new Error('Invalid credentials');
+      throw error;
     }
   },
 
-  signUp: async (email: string, password: string, name?: string) => {
+  signUp: async (email: string, password: string, fullName?: string) => {
     set({ loading: true });
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newUser = {
-      id: Date.now().toString(),
-      email,
-      name: name || email.split('@')[0]
-    };
-    
-    mockUsers.push(newUser);
-    set({ user: newUser, isAuthenticated: true, loading: false });
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || email.split('@')[0]
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      set({ 
+        user: data.user, 
+        session: data.session,
+        isAuthenticated: !!data.user,
+        loading: false 
+      });
+
+      if (data.user) {
+        await get().loadProfile();
+      }
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
   },
 
   signOut: async () => {
-    set({ user: null, isAuthenticated: false });
-    localStorage.removeItem('auth_user');
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
+    set({ 
+      user: null, 
+      profile: null,
+      session: null,
+      isAuthenticated: false 
+    });
   },
 
-  updateUser: (updates: Partial<User>) => {
+  resetPassword: async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) throw error;
+  },
+
+  updateProfile: async (updates: Partial<Profile>) => {
     const { user } = get();
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      set({ user: updatedUser });
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+    if (!user) throw new Error('No user logged in');
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    set(state => ({
+      profile: state.profile ? { ...state.profile, ...updates } : null
+    }));
+  },
+
+  loadProfile: async () => {
+    const { user } = get();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return;
     }
+
+    set({ profile: data });
   }
 }));
 
-// Initialize auth state from localStorage
-const storedUser = localStorage.getItem('auth_user');
-if (storedUser) {
-  const user = JSON.parse(storedUser);
-  useAuthStore.setState({ user, isAuthenticated: true });
+// Initialize auth state
+supabase.auth.onAuthStateChange((event, session) => {
+  const { loadProfile } = useAuthStore.getState();
+  
+  set({
+    user: session?.user ?? null,
+    session,
+    isAuthenticated: !!session?.user
+  });
+
+  if (session?.user) {
+    setTimeout(() => {
+      loadProfile();
+    }, 0);
+  } else {
+    set({ profile: null });
+  }
+});
+
+// Check for existing session on app start
+supabase.auth.getSession().then(({ data: { session } }) => {
+  const { loadProfile } = useAuthStore.getState();
+  
+  useAuthStore.setState({
+    user: session?.user ?? null,
+    session,
+    isAuthenticated: !!session?.user
+  });
+
+  if (session?.user) {
+    loadProfile();
+  }
+});
+
+function set(updates: any) {
+  useAuthStore.setState(updates);
 }

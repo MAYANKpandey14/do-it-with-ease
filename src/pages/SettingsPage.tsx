@@ -1,6 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { usePomodoroStore } from '../stores/pomodoroStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,39 +13,77 @@ import { User, Bell, Clock, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SettingsPage = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user, profile, updateProfile } = useAuthStore();
+  const { setDurations } = usePomodoroStore();
   const { toast } = useToast();
   
-  const [profile, setProfile] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+  const [profileData, setProfileData] = useState({
+    full_name: profile?.full_name || '',
+    email: profile?.email || '',
   });
 
   const [preferences, setPreferences] = useState({
-    theme: 'light',
-    notifications: true,
-    soundEnabled: true,
-    pomodoroDuration: 25,
-    shortBreakDuration: 5,
-    longBreakDuration: 15,
-    longBreakInterval: 4,
+    theme: profile?.theme || 'light',
+    notifications_enabled: profile?.notifications_enabled || true,
+    sound_enabled: profile?.sound_enabled || true,
+    pomodoro_duration: profile?.pomodoro_duration || 25,
+    short_break_duration: profile?.short_break_duration || 5,
+    long_break_duration: profile?.long_break_duration || 15,
+    long_break_interval: profile?.long_break_interval || 4,
   });
 
-  const handleProfileUpdate = () => {
-    updateUser(profile);
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile information has been saved.',
-    });
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        full_name: profile.full_name || '',
+        email: profile.email || '',
+      });
+      setPreferences({
+        theme: profile.theme || 'light',
+        notifications_enabled: profile.notifications_enabled || true,
+        sound_enabled: profile.sound_enabled || true,
+        pomodoro_duration: profile.pomodoro_duration || 25,
+        short_break_duration: profile.short_break_duration || 5,
+        long_break_duration: profile.long_break_duration || 15,
+        long_break_interval: profile.long_break_interval || 4,
+      });
+    }
+  }, [profile]);
+
+  const handleProfileUpdate = async () => {
+    try {
+      await updateProfile(profileData);
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile information has been saved.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update profile.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handlePreferencesUpdate = () => {
-    // In a real app, this would save to backend/localStorage
-    localStorage.setItem('user_preferences', JSON.stringify(preferences));
-    toast({
-      title: 'Preferences Saved',
-      description: 'Your preferences have been updated.',
-    });
+  const handlePreferencesUpdate = async () => {
+    try {
+      await updateProfile(preferences);
+      
+      // Update Pomodoro store with new durations
+      setDurations(preferences.pomodoro_duration, preferences.short_break_duration);
+      
+      toast({
+        title: 'Preferences Saved',
+        description: 'Your preferences have been updated.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update preferences.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -69,15 +108,15 @@ const SettingsPage = () => {
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
               <AvatarFallback className="text-lg">
-                {profile.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                {profileData.full_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled>
                 Change Avatar
               </Button>
               <p className="text-xs text-gray-500 mt-1">
-                JPG, PNG or GIF. Max size 2MB.
+                Coming soon
               </p>
             </div>
           </div>
@@ -87,8 +126,8 @@ const SettingsPage = () => {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                value={profile.name}
-                onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                value={profileData.full_name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, full_name: e.target.value }))}
                 placeholder="Enter your full name"
               />
             </div>
@@ -97,10 +136,13 @@ const SettingsPage = () => {
               <Input
                 id="email"
                 type="email"
-                value={profile.email}
-                onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                value={profileData.email}
+                disabled
                 placeholder="Enter your email"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Email cannot be changed
+              </p>
             </div>
           </div>
 
@@ -129,9 +171,9 @@ const SettingsPage = () => {
             </div>
             <Switch
               id="notifications"
-              checked={preferences.notifications}
+              checked={preferences.notifications_enabled}
               onCheckedChange={(checked) => 
-                setPreferences(prev => ({ ...prev, notifications: checked }))
+                setPreferences(prev => ({ ...prev, notifications_enabled: checked }))
               }
             />
           </div>
@@ -145,9 +187,9 @@ const SettingsPage = () => {
             </div>
             <Switch
               id="sound"
-              checked={preferences.soundEnabled}
+              checked={preferences.sound_enabled}
               onCheckedChange={(checked) => 
-                setPreferences(prev => ({ ...prev, soundEnabled: checked }))
+                setPreferences(prev => ({ ...prev, sound_enabled: checked }))
               }
             />
           </div>
@@ -173,12 +215,12 @@ const SettingsPage = () => {
                 id="pomodoro"
                 type="number"
                 min="1"
-                max="60"
-                value={preferences.pomodoroDuration}
+                max="120"
+                value={preferences.pomodoro_duration}
                 onChange={(e) => 
                   setPreferences(prev => ({ 
                     ...prev, 
-                    pomodoroDuration: parseInt(e.target.value) || 25 
+                    pomodoro_duration: parseInt(e.target.value) || 25 
                   }))
                 }
               />
@@ -189,12 +231,12 @@ const SettingsPage = () => {
                 id="shortBreak"
                 type="number"
                 min="1"
-                max="30"
-                value={preferences.shortBreakDuration}
+                max="60"
+                value={preferences.short_break_duration}
                 onChange={(e) => 
                   setPreferences(prev => ({ 
                     ...prev, 
-                    shortBreakDuration: parseInt(e.target.value) || 5 
+                    short_break_duration: parseInt(e.target.value) || 5 
                   }))
                 }
               />
@@ -205,12 +247,12 @@ const SettingsPage = () => {
                 id="longBreak"
                 type="number"
                 min="1"
-                max="60"
-                value={preferences.longBreakDuration}
+                max="120"
+                value={preferences.long_break_duration}
                 onChange={(e) => 
                   setPreferences(prev => ({ 
                     ...prev, 
-                    longBreakDuration: parseInt(e.target.value) || 15 
+                    long_break_duration: parseInt(e.target.value) || 15 
                   }))
                 }
               />
@@ -222,11 +264,11 @@ const SettingsPage = () => {
                 type="number"
                 min="2"
                 max="10"
-                value={preferences.longBreakInterval}
+                value={preferences.long_break_interval}
                 onChange={(e) => 
                   setPreferences(prev => ({ 
                     ...prev, 
-                    longBreakInterval: parseInt(e.target.value) || 4 
+                    long_break_interval: parseInt(e.target.value) || 4 
                   }))
                 }
               />

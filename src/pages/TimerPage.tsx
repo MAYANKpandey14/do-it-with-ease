@@ -1,16 +1,24 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTasks } from '../hooks/useTasks';
+import { useCreatePomodoroSession, useUpdatePomodoroSession } from '../hooks/usePomodoro';
+import { useAuthStore } from '../stores/authStore';
 import { usePomodoroStore } from '../stores/pomodoroStore';
-import { useTasksStore } from '../stores/tasksStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, Square, RotateCcw } from 'lucide-react';
-import { Task } from '../types';
+import { Play, Pause, Square, RotateCcw, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const TimerPage = () => {
+  const { profile } = useAuthStore();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks({ status: 'pending' });
+  const createSessionMutation = useCreatePomodoroSession();
+  const updateSessionMutation = useUpdatePomodoroSession();
+  const { toast } = useToast();
+
   const {
     currentSession,
     isRunning,
@@ -23,10 +31,18 @@ const TimerPage = () => {
     resumeSession,
     completeSession,
     resetSession,
+    setDurations,
   } = usePomodoroStore();
 
-  const { tasks } = useTasksStore();
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
+  // Update durations when profile loads
+  useEffect(() => {
+    if (profile) {
+      setDurations(profile.pomodoro_duration, profile.short_break_duration);
+    }
+  }, [profile, setDurations]);
 
   const activeTasks = tasks.filter(task => !task.isCompleted);
 
@@ -40,10 +56,30 @@ const TimerPage = () => {
     return ((workDuration - timeRemaining) / workDuration) * 100;
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     const task = tasks.find(t => t.id === selectedTaskId);
-    if (task) {
+    if (!task) return;
+
+    try {
+      const session = await createSessionMutation.mutateAsync({
+        taskId: task.id,
+        durationMinutes: Math.round(workDuration / 60),
+        sessionType: 'work'
+      });
+
+      setCurrentSessionId(session.id);
       startSession(task);
+      
+      toast({
+        title: 'Pomodoro started!',
+        description: `Focus time for "${task.title}" has begun.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start session.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -54,6 +90,56 @@ const TimerPage = () => {
       resumeSession();
     }
   };
+
+  const handleComplete = async () => {
+    if (currentSessionId) {
+      try {
+        await updateSessionMutation.mutateAsync({
+          id: currentSessionId,
+          status: 'completed',
+          completedAt: new Date()
+        });
+
+        toast({
+          title: 'Pomodoro completed!',
+          description: 'Great work! Take a well-deserved break.',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to complete session.',
+          variant: 'destructive',
+        });
+      }
+    }
+
+    completeSession();
+    setCurrentSessionId(null);
+  };
+
+  const handleReset = async () => {
+    if (currentSessionId) {
+      try {
+        await updateSessionMutation.mutateAsync({
+          id: currentSessionId,
+          status: 'cancelled'
+        });
+      } catch (error: any) {
+        console.error('Failed to update session status:', error);
+      }
+    }
+
+    resetSession();
+    setCurrentSessionId(null);
+  };
+
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -140,11 +226,15 @@ const TimerPage = () => {
               {!currentSession ? (
                 <Button
                   onClick={handleStart}
-                  disabled={!selectedTaskId}
+                  disabled={!selectedTaskId || createSessionMutation.isPending}
                   size="lg"
                   className="px-8"
                 >
-                  <Play className="mr-2 h-5 w-5" />
+                  {createSessionMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 h-5 w-5" />
+                  )}
                   Start Session
                 </Button>
               ) : (
@@ -162,11 +252,21 @@ const TimerPage = () => {
                       </>
                     )}
                   </Button>
-                  <Button onClick={completeSession} size="lg" variant="outline">
+                  <Button 
+                    onClick={handleComplete} 
+                    size="lg" 
+                    variant="outline"
+                    disabled={updateSessionMutation.isPending}
+                  >
                     <Square className="mr-2 h-4 w-4" />
                     Complete
                   </Button>
-                  <Button onClick={resetSession} size="lg" variant="outline">
+                  <Button 
+                    onClick={handleReset} 
+                    size="lg" 
+                    variant="outline"
+                    disabled={updateSessionMutation.isPending}
+                  >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Reset
                   </Button>
@@ -230,10 +330,10 @@ const TimerPage = () => {
         <CardContent>
           <div className="space-y-2 text-sm text-gray-600">
             <p>1. Choose a task you want to work on</p>
-            <p>2. Set the timer for 25 minutes (1 Pomodoro)</p>
+            <p>2. Set the timer for {profile?.pomodoro_duration || 25} minutes (1 Pomodoro)</p>
             <p>3. Work on the task until the timer goes off</p>
-            <p>4. Take a short 5-minute break</p>
-            <p>5. After 4 Pomodoros, take a longer 15-30 minute break</p>
+            <p>4. Take a short {profile?.short_break_duration || 5}-minute break</p>
+            <p>5. After {profile?.long_break_interval || 4} Pomodoros, take a longer {profile?.long_break_duration || 15}-minute break</p>
           </div>
         </CardContent>
       </Card>

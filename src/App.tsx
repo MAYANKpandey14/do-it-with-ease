@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import TimerPage from "./pages/TimerPage";
@@ -36,6 +37,10 @@ const App = () => {
             <Route 
               path="/register" 
               element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} 
+            />
+            <Route 
+              path="/reset-password" 
+              element={<ResetPasswordPage />} 
             />
             
             {/* Protected routes */}

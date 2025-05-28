@@ -2,13 +2,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useTasksStore } from '../stores/tasksStore';
-import { usePomodoroStore } from '../stores/pomodoroStore';
-import { CheckSquare, Clock, Target, TrendingUp } from 'lucide-react';
+import { useTasks } from '../hooks/useTasks';
+import { usePomodoroSessions } from '../hooks/usePomodoro';
+import { CheckSquare, Clock, Target, TrendingUp, Loader2 } from 'lucide-react';
 
 const DashboardPage = () => {
-  const { tasks } = useTasksStore();
-  const { sessions } = usePomodoroStore();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const { data: sessions = [], isLoading: sessionsLoading } = usePomodoroSessions();
+
+  if (tasksLoading || sessionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const completedTasks = tasks.filter(task => task.isCompleted);
   const pendingTasks = tasks.filter(task => !task.isCompleted);

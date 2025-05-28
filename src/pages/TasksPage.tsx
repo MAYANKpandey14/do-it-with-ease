@@ -1,5 +1,6 @@
-
 import { useState } from 'react';
+import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '../hooks/useTasks';
+import { useTags } from '../hooks/useTags';
 import { useTasksStore } from '../stores/tasksStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,15 +13,21 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, Filter, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task } from '../types';
+import { useToast } from '@/hooks/use-toast';
 
 const TasksPage = () => {
-  const { tasks, filteredTasks, filters, addTask, updateTask, deleteTask, toggleTask, setFilters } = useTasksStore();
+  const { filters, setFilters } = useTasksStore();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks(filters);
+  const { data: tags = [] } = useTags();
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
+  const { toast } = useToast();
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [newTask, setNewTask] = useState({
@@ -34,13 +41,14 @@ const TasksPage = () => {
 
   const [newTag, setNewTag] = useState('');
 
-  const handleAddTask = () => {
-    if (newTask.title.trim()) {
-      addTask({
+  const handleAddTask = async () => {
+    if (!newTask.title.trim()) return;
+
+    try {
+      await createTaskMutation.mutateAsync({
         ...newTask,
-        completedPomodoros: 0,
-        isCompleted: false,
       });
+      
       setNewTask({
         title: '',
         description: '',
@@ -50,6 +58,48 @@ const TasksPage = () => {
         estimatedPomodoros: 1,
       });
       setIsAddDialogOpen(false);
+      
+      toast({
+        title: 'Task created',
+        description: 'Your new task has been added successfully.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create task.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleToggleTask = async (taskId: string, isCompleted: boolean) => {
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: taskId,
+        updates: { isCompleted: !isCompleted }
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update task.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+      toast({
+        title: 'Task deleted',
+        description: 'The task has been removed successfully.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete task.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -84,7 +134,15 @@ const TasksPage = () => {
     }
   };
 
-  const allTags = Array.from(new Set(tasks.flatMap(task => task.tags)));
+  const allTags = Array.from(new Set(tags.map(tag => tag.name)));
+
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,7 +229,6 @@ const TasksPage = () => {
                       selected={newTask.dueDate}
                       onSelect={(date) => setNewTask(prev => ({ ...prev, dueDate: date }))}
                       initialFocus
-                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -198,8 +255,12 @@ const TasksPage = () => {
                   ))}
                 </div>
               </div>
-              <Button onClick={handleAddTask} className="w-full">
-                Add Task
+              <Button 
+                onClick={handleAddTask} 
+                className="w-full"
+                disabled={createTaskMutation.isPending}
+              >
+                {createTaskMutation.isPending ? 'Adding...' : 'Add Task'}
               </Button>
             </div>
           </DialogContent>
@@ -274,20 +335,20 @@ const TasksPage = () => {
 
       {/* Task List */}
       <div className="space-y-4">
-        {filteredTasks.length === 0 ? (
+        {tasks.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-gray-500">No tasks found. Create your first task to get started!</p>
             </CardContent>
           </Card>
         ) : (
-          filteredTasks.map((task) => (
+          tasks.map((task) => (
             <Card key={task.id} className={cn("transition-all hover:shadow-md", task.isCompleted && "opacity-75")}>
               <CardContent className="p-4">
                 <div className="flex items-start space-x-4">
                   <Checkbox
                     checked={task.isCompleted}
-                    onCheckedChange={() => toggleTask(task.id)}
+                    onCheckedChange={() => handleToggleTask(task.id, task.isCompleted)}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -319,10 +380,15 @@ const TasksPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingTask(task)}>
+                    <Button variant="ghost" size="sm">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteTask(task.id)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDeleteTask(task.id)}
+                      disabled={deleteTaskMutation.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
