@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { usePomodoroStore } from '../stores/pomodoroStore';
+import { useTheme } from '../providers/ThemeProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { User, Bell, Clock, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,6 +26,7 @@ interface UserPreferences {
 const SettingsPage = () => {
   const { user, profile, updateProfile } = useAuthStore();
   const { setDurations } = usePomodoroStore();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   
   const [profileData, setProfileData] = useState({
@@ -34,8 +36,8 @@ const SettingsPage = () => {
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     theme: profile?.theme || 'light',
-    notifications_enabled: profile?.notifications_enabled || true,
-    sound_enabled: profile?.sound_enabled || true,
+    notifications_enabled: profile?.notifications_enabled ?? true,
+    sound_enabled: profile?.sound_enabled ?? true,
     pomodoro_duration: profile?.pomodoro_duration || 25,
     short_break_duration: profile?.short_break_duration || 5,
     long_break_duration: profile?.long_break_duration || 15,
@@ -50,8 +52,8 @@ const SettingsPage = () => {
       });
       setPreferences({
         theme: profile.theme || 'light',
-        notifications_enabled: profile.notifications_enabled || true,
-        sound_enabled: profile.sound_enabled || true,
+        notifications_enabled: profile.notifications_enabled ?? true,
+        sound_enabled: profile.sound_enabled ?? true,
         pomodoro_duration: profile.pomodoro_duration || 25,
         short_break_duration: profile.short_break_duration || 5,
         long_break_duration: profile.long_break_duration || 15,
@@ -83,6 +85,9 @@ const SettingsPage = () => {
       // Update Pomodoro store with new durations
       setDurations(preferences.pomodoro_duration, preferences.short_break_duration);
       
+      // Apply theme change
+      await setTheme(preferences.theme as 'light' | 'dark');
+      
       toast({
         title: 'Preferences Saved',
         description: 'Your preferences have been updated.',
@@ -99,8 +104,8 @@ const SettingsPage = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your account and application preferences</p>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">Manage your account and application preferences</p>
       </div>
 
       {/* Profile Settings */}
@@ -115,21 +120,7 @@ const SettingsPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-lg">
-                {profileData.full_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <Button variant="outline" size="sm" disabled>
-                Change Avatar
-              </Button>
-              <p className="text-xs text-gray-500 mt-1">
-                Coming soon
-              </p>
-            </div>
-          </div>
+          <AvatarUpload size="lg" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -150,7 +141,7 @@ const SettingsPage = () => {
                 disabled
                 placeholder="Enter your email"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Email cannot be changed
               </p>
             </div>
@@ -177,7 +168,7 @@ const SettingsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="notifications">Push Notifications</Label>
-              <p className="text-sm text-gray-500">Receive notifications for task reminders</p>
+              <p className="text-sm text-muted-foreground">Receive notifications for task reminders</p>
             </div>
             <Switch
               id="notifications"
@@ -193,7 +184,7 @@ const SettingsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="sound">Sound Notifications</Label>
-              <p className="text-sm text-gray-500">Play sound when Pomodoro sessions end</p>
+              <p className="text-sm text-muted-foreground">Play sound when Pomodoro sessions end</p>
             </div>
             <Switch
               id="sound"
@@ -282,7 +273,7 @@ const SettingsPage = () => {
                   }))
                 }
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Take a long break after this many Pomodoros
               </p>
             </div>
