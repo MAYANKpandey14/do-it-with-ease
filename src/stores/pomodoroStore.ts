@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { PomodoroSession, Task } from '../types';
+import { useTasksStore } from './tasksStore';
 
 interface PomodoroState {
   currentSession: PomodoroSession | null;

@@ -224,7 +224,7 @@ const TasksPage = () => {
                 />
               </div>
             </div>
-            <Select value={filters.priority || ''} onValueChange={(value) => setFilters({ ...filters, priority: value || undefined })}>
+            <Select value={filters.priority || ''} onValueChange={(value: string) => setFilters({ ...filters, priority: value as 'high' | 'medium' | 'low' || undefined })}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
@@ -235,7 +235,7 @@ const TasksPage = () => {
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filters.status || ''} onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}>
+            <Select value={filters.status || ''} onValueChange={(value: string) => setFilters({ ...filters, status: value as 'completed' | 'pending' || undefined })}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>

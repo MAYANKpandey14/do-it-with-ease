@@ -14,6 +14,7 @@ interface TasksState {
   setFilters: (filters: TaskFilters) => void;
   getTasksByTag: (tag: string) => Task[];
   getTasksByPriority: (priority: string) => Task[];
+  applyFilters: () => void;
 }
 
 export const useTasksStore = create<TasksState>((set, get) => ({
