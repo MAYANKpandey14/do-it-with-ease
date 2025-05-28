@@ -1,15 +1,15 @@
 
 import { useMemo } from 'react';
-import { useTasksStore } from '../stores/tasksStore';
-import { usePomodoroStore } from '../stores/pomodoroStore';
+import { useTasks } from '../hooks/useTasks';
+import { usePomodoroSessions } from '../hooks/usePomodoro';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { BarChart3, TrendingUp, Clock, Target } from 'lucide-react';
 
 const AnalyticsPage = () => {
-  const { tasks } = useTasksStore();
-  const { sessions } = usePomodoroStore();
+  const { data: tasks = [] } = useTasks();
+  const { data: sessions = [] } = usePomodoroSessions();
 
   const analytics = useMemo(() => {
     const totalTasks = tasks.length;
@@ -70,7 +70,8 @@ const AnalyticsPage = () => {
     };
   }, [tasks, sessions]);
 
-  const formatTime = (minutes: number) => {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
@@ -131,7 +132,7 @@ const AnalyticsPage = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatTime(analytics.totalFocusTime / 60)}</div>
+            <div className="text-2xl font-bold">{formatTime(analytics.totalFocusTime)}</div>
             <p className="text-xs text-muted-foreground">
               Total time focused
             </p>
@@ -290,7 +291,7 @@ const AnalyticsPage = () => {
               <div className="pt-2 border-t">
                 <p className="text-sm text-gray-600">
                   You've completed <strong>{analytics.totalPomodoros}</strong> focus sessions,
-                  spending <strong>{formatTime(analytics.totalFocusTime / 60)}</strong> in deep work.
+                  spending <strong>{formatTime(analytics.totalFocusTime)}</strong> in deep work.
                 </p>
               </div>
             </div>

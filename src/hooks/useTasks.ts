@@ -4,7 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { Task, TaskFilters } from '@/types';
 
-interface TaskWithTags extends Omit<Task, 'tags'> {
+interface DbTask {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  priority: 'high' | 'medium' | 'low';
+  estimated_pomodoros: number;
+  completed_pomodoros: number;
+  is_completed: boolean;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
   task_tags: {
     tags: {
       id: string;
@@ -14,12 +25,12 @@ interface TaskWithTags extends Omit<Task, 'tags'> {
   }[];
 }
 
-const transformTask = (dbTask: TaskWithTags): Task => ({
+const transformTask = (dbTask: DbTask): Task => ({
   id: dbTask.id,
   userId: dbTask.user_id,
   title: dbTask.title,
   description: dbTask.description,
-  priority: dbTask.priority as 'high' | 'medium' | 'low',
+  priority: dbTask.priority,
   tags: dbTask.task_tags.map(tt => tt.tags.name),
   dueDate: dbTask.due_date ? new Date(dbTask.due_date) : undefined,
   estimatedPomodoros: dbTask.estimated_pomodoros,
@@ -61,7 +72,7 @@ export const useTasks = (filters?: TaskFilters) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      let tasks = (data as TaskWithTags[]).map(transformTask);
+      let tasks = (data as DbTask[]).map(transformTask);
 
       // Apply client-side filters
       if (filters?.search) {

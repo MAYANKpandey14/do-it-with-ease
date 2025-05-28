@@ -12,6 +12,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Bell, Clock, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface UserPreferences {
+  theme: string;
+  notifications_enabled: boolean;
+  sound_enabled: boolean;
+  pomodoro_duration: number;
+  short_break_duration: number;
+  long_break_duration: number;
+  long_break_interval: number;
+}
+
 const SettingsPage = () => {
   const { user, profile, updateProfile } = useAuthStore();
   const { setDurations } = usePomodoroStore();
@@ -22,7 +32,7 @@ const SettingsPage = () => {
     email: profile?.email || '',
   });
 
-  const [preferences, setPreferences] = useState({
+  const [preferences, setPreferences] = useState<UserPreferences>({
     theme: profile?.theme || 'light',
     notifications_enabled: profile?.notifications_enabled || true,
     sound_enabled: profile?.sound_enabled || true,
