@@ -58,7 +58,7 @@ const TimerPage = () => {
 
   const handleStart = async () => {
     const task = tasks.find(t => t.id === selectedTaskId);
-    if (!task) return;
+    if (!task || selectedTaskId === 'no-tasks') return;
 
     try {
       const session = await createSessionMutation.mutateAsync({
@@ -226,7 +226,7 @@ const TimerPage = () => {
               {!currentSession ? (
                 <Button
                   onClick={handleStart}
-                  disabled={!selectedTaskId || createSessionMutation.isPending}
+                  disabled={!selectedTaskId || selectedTaskId === 'no-tasks' || createSessionMutation.isPending}
                   size="lg"
                   className="px-8"
                 >
@@ -294,7 +294,7 @@ const TimerPage = () => {
             </SelectTrigger>
             <SelectContent>
               {activeTasks.length === 0 ? (
-                <SelectItem value="" disabled>No active tasks available</SelectItem>
+                <SelectItem value="no-tasks" disabled>No active tasks available</SelectItem>
               ) : (
                 activeTasks.map((task) => (
                   <SelectItem key={task.id} value={task.id}>
