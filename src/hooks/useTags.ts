@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { sanitizeInput, validateTagName } from '@/utils/security';
 
 interface Tag {
   id: string;
@@ -38,12 +39,26 @@ export const useCreateTag = () => {
     mutationFn: async (tagData: { name: string; color?: string }) => {
       if (!user) throw new Error('User not authenticated');
 
+      // Security: Validate and sanitize tag input
+      const sanitizedName = sanitizeInput(tagData.name, 50);
+      const nameValidation = validateTagName(sanitizedName);
+      
+      if (!nameValidation.isValid) {
+        throw new Error(nameValidation.error);
+      }
+
+      // Validate color if provided
+      const color = tagData.color || '#3B82F6';
+      if (!/^#[0-9A-F]{6}$/i.test(color)) {
+        throw new Error('Invalid color format');
+      }
+
       const { data, error } = await supabase
         .from('tags')
         .insert({
           user_id: user.id,
-          name: tagData.name,
-          color: tagData.color || '#3B82F6'
+          name: sanitizedName,
+          color: color
         })
         .select()
         .single();

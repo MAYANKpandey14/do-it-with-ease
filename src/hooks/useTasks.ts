@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { Task, TaskFilters } from '@/types';
+import { sanitizeInput, validateTaskTitle, validateTaskDescription } from '@/utils/security';
 
 interface DbTask {
   id: string;
@@ -74,12 +74,12 @@ export const useTasks = (filters?: TaskFilters) => {
 
       let tasks = (data as DbTask[]).map(transformTask);
 
-      // Apply client-side filters
+      // Apply client-side filters with sanitization
       if (filters?.search) {
-        const search = filters.search.toLowerCase();
+        const sanitizedSearch = sanitizeInput(filters.search.toLowerCase(), 100);
         tasks = tasks.filter(task => 
-          task.title.toLowerCase().includes(search) || 
-          task.description?.toLowerCase().includes(search)
+          task.title.toLowerCase().includes(sanitizedSearch) || 
+          task.description?.toLowerCase().includes(sanitizedSearch)
         );
       }
 
@@ -110,13 +110,40 @@ export const useCreateTask = () => {
     }) => {
       if (!user) throw new Error('User not authenticated');
 
+      // Security: Validate and sanitize inputs
+      const sanitizedTitle = sanitizeInput(taskData.title, 200);
+      const sanitizedDescription = taskData.description ? sanitizeInput(taskData.description, 2000) : undefined;
+
+      const titleValidation = validateTaskTitle(sanitizedTitle);
+      if (!titleValidation.isValid) {
+        throw new Error(titleValidation.error);
+      }
+
+      if (sanitizedDescription) {
+        const descValidation = validateTaskDescription(sanitizedDescription);
+        if (!descValidation.isValid) {
+          throw new Error(descValidation.error);
+        }
+      }
+
+      // Validate estimated pomodoros
+      if (taskData.estimatedPomodoros < 1 || taskData.estimatedPomodoros > 50) {
+        throw new Error('Estimated pomodoros must be between 1 and 50');
+      }
+
+      // Sanitize and validate tags
+      const sanitizedTags = taskData.tags
+        .map(tag => sanitizeInput(tag, 50))
+        .filter(tag => tag.length > 0)
+        .slice(0, 10); // Limit to 10 tags max
+
       // Create task
       const { data: task, error: taskError } = await supabase
         .from('tasks')
         .insert({
           user_id: user.id,
-          title: taskData.title,
-          description: taskData.description,
+          title: sanitizedTitle,
+          description: sanitizedDescription,
           priority: taskData.priority,
           estimated_pomodoros: taskData.estimatedPomodoros,
           due_date: taskData.dueDate?.toISOString(),
@@ -127,7 +154,7 @@ export const useCreateTask = () => {
       if (taskError) throw taskError;
 
       // Handle tags
-      for (const tagName of taskData.tags) {
+      for (const tagName of sanitizedTags) {
         // Create or get tag
         const { data: existingTag } = await supabase
           .from('tags')
@@ -183,11 +210,40 @@ export const useUpdateTask = () => {
 
       const dbUpdates: any = {};
       
-      if (updates.title !== undefined) dbUpdates.title = updates.title;
-      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      // Security: Validate and sanitize updates
+      if (updates.title !== undefined) {
+        const sanitizedTitle = sanitizeInput(updates.title, 200);
+        const titleValidation = validateTaskTitle(sanitizedTitle);
+        if (!titleValidation.isValid) {
+          throw new Error(titleValidation.error);
+        }
+        dbUpdates.title = sanitizedTitle;
+      }
+      
+      if (updates.description !== undefined) {
+        const sanitizedDescription = updates.description ? sanitizeInput(updates.description, 2000) : null;
+        if (sanitizedDescription) {
+          const descValidation = validateTaskDescription(sanitizedDescription);
+          if (!descValidation.isValid) {
+            throw new Error(descValidation.error);
+          }
+        }
+        dbUpdates.description = sanitizedDescription;
+      }
+      
       if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-      if (updates.estimatedPomodoros !== undefined) dbUpdates.estimated_pomodoros = updates.estimatedPomodoros;
-      if (updates.completedPomodoros !== undefined) dbUpdates.completed_pomodoros = updates.completedPomodoros;
+      if (updates.estimatedPomodoros !== undefined) {
+        if (updates.estimatedPomodoros < 1 || updates.estimatedPomodoros > 50) {
+          throw new Error('Estimated pomodoros must be between 1 and 50');
+        }
+        dbUpdates.estimated_pomodoros = updates.estimatedPomodoros;
+      }
+      if (updates.completedPomodoros !== undefined) {
+        if (updates.completedPomodoros < 0 || updates.completedPomodoros > 100) {
+          throw new Error('Completed pomodoros must be between 0 and 100');
+        }
+        dbUpdates.completed_pomodoros = updates.completedPomodoros;
+      }
       if (updates.isCompleted !== undefined) dbUpdates.is_completed = updates.isCompleted;
       if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate?.toISOString();
 
