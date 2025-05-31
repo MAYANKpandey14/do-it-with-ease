@@ -84,4 +84,82 @@
     @apply bg-background text-foreground;
     font-family: "Inter", sans-serif;
   }
+
+  /* Accessibility improvements */
+  
+  /* Focus indicators for keyboard navigation */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Skip navigation link */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .sr-only:focus,
+  .focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  /* High contrast focus indicators */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible,
+  [role="combobox"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Ensure sufficient color contrast for interactive elements */
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+    /* Ensuring 4.5:1 contrast ratio minimum */
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --muted-foreground: 215.4 16.3% 35%; /* Darker for better contrast */
+    }
+    
+    .dark {
+      --muted-foreground: 215 20.2% 75%; /* Lighter for better contrast in dark mode */
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+  }
 }

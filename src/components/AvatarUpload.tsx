@@ -20,6 +20,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const sizeClasses = {
     sm: 'h-10 w-10',
@@ -28,7 +29,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   };
 
   const getAvatarUrl = () => {
-    if (!profile?.avatar_url) return null;
+    if (!profile?.avatar_url || imageError) return null;
     
     if (profile.avatar_url.startsWith('http')) {
       return profile.avatar_url;
@@ -64,6 +65,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       // Update profile with new avatar URL
       await updateProfile({ avatar_url: filePath });
+      setImageError(false);
 
       toast({
         title: 'Avatar uploaded',
@@ -107,6 +109,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     uploadAvatar(file);
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   const initials = profile?.full_name
     ?.split(' ')
     .map(n => n[0])
@@ -115,9 +121,16 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
   return (
     <div className="flex items-center space-x-4">
-      <Avatar className={sizeClasses[size]}>
-        <AvatarImage src={getAvatarUrl() || undefined} alt="Avatar" />
-        <AvatarFallback className="text-lg font-medium">
+      <Avatar className={sizeClasses[size]} role="img">
+        <AvatarImage 
+          src={getAvatarUrl() || undefined} 
+          alt={`${profile?.full_name || 'User'}'s profile picture`}
+          onError={handleImageError}
+        />
+        <AvatarFallback 
+          className="text-lg font-medium bg-primary/10 text-primary"
+          aria-label={`Profile initials: ${initials}`}
+        >
           {initials}
         </AvatarFallback>
       </Avatar>
@@ -129,21 +142,31 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             ref={fileInputRef}
             onChange={handleFileSelect}
             accept="image/*"
-            className="hidden"
+            className="sr-only"
+            aria-label="Upload profile picture"
           />
           <Button
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            aria-describedby="avatar-upload-description"
           >
             {uploading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>Uploading...</span>
+              </>
             ) : (
-              <Upload className="mr-2 h-4 w-4" />
+              <>
+                <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+                <span>Change Avatar</span>
+              </>
             )}
-            {uploading ? 'Uploading...' : 'Change Avatar'}
           </Button>
+          <div id="avatar-upload-description" className="sr-only">
+            Upload a new profile picture. Supported formats: JPG, PNG, GIF. Maximum size: 5MB.
+          </div>
         </div>
       )}
     </div>
