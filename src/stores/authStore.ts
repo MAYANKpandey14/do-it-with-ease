@@ -95,15 +95,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    set({ 
-      user: null, 
-      profile: null,
-      session: null,
-      isAuthenticated: false 
-    });
+    try {
+      // Clear local state first to prevent API calls with invalid tokens
+      set({ 
+        user: null, 
+        profile: null,
+        session: null,
+        isAuthenticated: false 
+      });
+
+      // Then attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      // Don't throw error if session doesn't exist - user is already logged out
+      if (error && !error.message.includes('session_not_found') && !error.message.includes('Session not found')) {
+        throw error;
+      }
+    } catch (error) {
+      // If there's an error, ensure we still clear the local state
+      set({ 
+        user: null, 
+        profile: null,
+        session: null,
+        isAuthenticated: false 
+      });
+      
+      // Only throw if it's not a session-related error
+      const errorMessage = error?.message || '';
+      if (!errorMessage.includes('session_not_found') && 
+          !errorMessage.includes('Session not found') &&
+          !errorMessage.includes('No API key found')) {
+        throw error;
+      }
+    }
   },
 
   resetPassword: async (email: string) => {
@@ -152,18 +176,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 supabase.auth.onAuthStateChange((event, session) => {
   const { loadProfile } = useAuthStore.getState();
   
-  set({
+  useAuthStore.setState({
     user: session?.user ?? null,
     session,
     isAuthenticated: !!session?.user
   });
 
-  if (session?.user) {
+  if (session?.user && event !== 'SIGNED_OUT') {
     setTimeout(() => {
       loadProfile();
     }, 0);
   } else {
-    set({ profile: null });
+    useAuthStore.setState({ profile: null });
   }
 });
 
@@ -181,7 +205,3 @@ supabase.auth.getSession().then(({ data: { session } }) => {
     loadProfile();
   }
 });
-
-function set(updates: any) {
-  useAuthStore.setState(updates);
-}

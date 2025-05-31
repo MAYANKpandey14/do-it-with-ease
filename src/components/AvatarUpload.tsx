@@ -16,7 +16,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   size = 'md', 
   showUploadButton = true 
 }) => {
-  const { user, profile, updateProfile } = useAuthStore();
+  const { user, profile, updateProfile, loadProfile } = useAuthStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -65,6 +65,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       // Update profile with new avatar URL
       await updateProfile({ avatar_url: filePath });
+      
+      // Reload profile to ensure UI updates
+      await loadProfile();
+      
       setImageError(false);
 
       toast({
@@ -117,7 +121,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     ?.split(' ')
     .map(n => n[0])
     .join('')
-    .toUpperCase() || 'U';
+    .toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <div className="flex items-center space-x-4">
