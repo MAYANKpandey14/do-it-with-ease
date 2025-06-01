@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '../hooks/useTasks';
 import { useTags } from '../hooks/useTags';
 import { useTasksStore } from '../stores/tasksStore';
+import { useDebounce } from '../hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const TasksPage = () => {
   const { filters, setFilters } = useTasksStore();
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks(filters);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  
+  // Use debounced search term for actual filtering
+  const searchFilters = { ...filters, search: debouncedSearchTerm || undefined };
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks(searchFilters);
   const { data: tags = [] } = useTags();
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
@@ -28,7 +34,6 @@ const TasksPage = () => {
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -122,7 +127,6 @@ const TasksPage = () => {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setFilters({ ...filters, search: value || undefined });
   };
 
   const getPriorityColor = (priority: string) => {
