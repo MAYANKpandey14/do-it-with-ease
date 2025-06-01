@@ -83,9 +83,11 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Inter", sans-serif;
+    /* Smooth theme transitions */
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  /* Accessibility improvements */
+  /* Enhanced accessibility improvements */
   
   /* Focus indicators for keyboard navigation */
   *:focus-visible {
@@ -117,30 +119,27 @@
     white-space: normal;
   }
 
-  /* High contrast focus indicators */
+  /* Enhanced focus indicators for better accessibility */
   button:focus-visible,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
   [role="button"]:focus-visible,
-  [role="combobox"]:focus-visible {
+  [role="combobox"]:focus-visible,
+  a:focus-visible {
     @apply ring-2 ring-primary ring-offset-2;
-  }
-
-  /* Ensure sufficient color contrast for interactive elements */
-  .text-muted-foreground {
-    color: hsl(var(--muted-foreground));
-    /* Ensuring 4.5:1 contrast ratio minimum */
   }
 
   /* High contrast mode support */
   @media (prefers-contrast: high) {
     :root {
       --muted-foreground: 215.4 16.3% 35%; /* Darker for better contrast */
+      --border: 214.3 31.8% 80%; /* Stronger border */
     }
     
     .dark {
       --muted-foreground: 215 20.2% 75%; /* Lighter for better contrast in dark mode */
+      --border: 217.2 32.6% 25%; /* Stronger border for dark mode */
     }
   }
 
@@ -161,5 +160,72 @@
     .no-print {
       display: none !important;
     }
+  }
+}
+
+@layer components {
+  /* Mobile-optimized components */
+  .mobile-card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm p-4 md:p-6;
+  }
+  
+  .mobile-button {
+    @apply min-h-touch flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors;
+  }
+  
+  /* Touch-friendly form elements */
+  .touch-input {
+    @apply min-h-touch px-3 py-2 border border-input bg-background rounded-md;
+  }
+  
+  /* Responsive text scaling */
+  .fluid-text-sm {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+  
+  .fluid-text-base {
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
+  }
+  
+  .fluid-text-lg {
+    font-size: clamp(1.125rem, 3vw, 1.25rem);
+  }
+  
+  .fluid-text-xl {
+    font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+  }
+  
+  .fluid-text-2xl {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+  }
+}
+
+@layer utilities {
+  /* Touch-friendly utilities */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Responsive padding utilities */
+  .px-mobile {
+    @apply px-4 md:px-6;
+  }
+  
+  .py-mobile {
+    @apply py-4 md:py-6;
+  }
+  
+  .p-mobile {
+    @apply p-4 md:p-6;
+  }
+  
+  /* Safe area utilities for mobile devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
   }
 }

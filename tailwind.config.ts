@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,6 +19,16 @@ export default {
 			}
 		},
 		extend: {
+			// Enhanced responsive breakpoints
+			screens: {
+				'xs': '320px',
+				'sm': '640px',
+				'md': '768px',
+				'lg': '1024px',
+				'xl': '1280px',
+				'2xl': '1400px',
+			},
+			// Enhanced color system with better semantic naming
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -68,6 +79,20 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+			// Responsive spacing utilities
+			spacing: {
+				'touch': '44px', // Minimum touch target size
+				'18': '4.5rem',
+				'22': '5.5rem',
+			},
+			// Fluid typography
+			fontSize: {
+				'fluid-sm': 'clamp(0.875rem, 2vw, 1rem)',
+				'fluid-base': 'clamp(1rem, 2.5vw, 1.125rem)',
+				'fluid-lg': 'clamp(1.125rem, 3vw, 1.25rem)',
+				'fluid-xl': 'clamp(1.25rem, 3.5vw, 1.5rem)',
+				'fluid-2xl': 'clamp(1.5rem, 4vw, 2rem)',
+			},
 			keyframes: {
 				'accordion-down': {
 					from: {
@@ -84,11 +109,17 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				// Smooth theme transition
+				'theme-transition': {
+					'0%': { opacity: '0.8' },
+					'100%': { opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'theme-transition': 'theme-transition 0.2s ease-out'
 			}
 		}
 	},

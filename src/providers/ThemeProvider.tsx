@@ -1,12 +1,14 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { prefersReducedMotion } from '@/lib/accessibility';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  systemTheme: 'light' | 'dark';
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -25,7 +27,25 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const { profile, updateProfile } = useAuthStore();
-  const theme = (profile?.theme as Theme) || 'light';
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
+  const theme = (profile?.theme as Theme) || 'system';
+
+  // Detect system theme preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? 'dark' : 'light');
+    };
+
+    // Set initial value
+    setSystemTheme(mediaQuery.matches ? 'dark' : 'light');
+    
+    // Listen for changes
+    mediaQuery.addEventListener('change', handleChange);
+    
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const setTheme = async (newTheme: Theme) => {
     try {
@@ -36,18 +56,44 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   };
 
-  const applyTheme = (theme: Theme) => {
+  const applyTheme = (themeValue: Theme) => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-    root.classList.add(theme);
+
+    // Determine actual theme to apply
+    let actualTheme: 'light' | 'dark';
+    if (themeValue === 'system') {
+      actualTheme = systemTheme;
+    } else {
+      actualTheme = themeValue;
+    }
+
+    root.classList.add(actualTheme);
+
+    // Add smooth transition if motion is not reduced
+    if (!prefersReducedMotion()) {
+      root.style.transition = 'color 0.2s ease, background-color 0.2s ease';
+      setTimeout(() => {
+        root.style.transition = '';
+      }, 200);
+    }
+
+    // Update meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        'content', 
+        actualTheme === 'dark' ? '#0f172a' : '#ffffff'
+      );
+    }
   };
 
   useEffect(() => {
     applyTheme(theme);
-  }, [theme]);
+  }, [theme, systemTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, systemTheme }}>
       {children}
     </ThemeContext.Provider>
   );
