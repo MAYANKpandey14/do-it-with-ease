@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '../hooks/useTasks';
+import { useTasks, useCreateTask } from '../hooks/useTasks';
 import { useTags } from '../hooks/useTags';
 import { useTasksStore } from '../stores/tasksStore';
 import { useDebounce } from '../hooks/useDebounce';
@@ -12,14 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getFocusRing } from '@/lib/theme';
+import TaskCard from '@/components/TaskCard';
 
 const TasksPage = () => {
   const { filters, setFilters } = useTasksStore();
@@ -32,8 +32,6 @@ const TasksPage = () => {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks(searchFilters);
   const { data: tags = [] } = useTags();
   const createTaskMutation = useCreateTask();
-  const updateTaskMutation = useUpdateTask();
-  const deleteTaskMutation = useDeleteTask();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -80,37 +78,6 @@ const TasksPage = () => {
     }
   };
 
-  const handleToggleTask = async (taskId: string, isCompleted: boolean) => {
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: taskId,
-        updates: { isCompleted: !isCompleted }
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update task.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    try {
-      await deleteTaskMutation.mutateAsync(taskId);
-      toast({
-        title: 'Task deleted',
-        description: 'The task has been removed successfully.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete task.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleAddTag = () => {
     if (newTag.trim() && !newTask.tags.includes(newTag.trim())) {
       setNewTask(prev => ({
@@ -130,15 +97,6 @@ const TasksPage = () => {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
   };
 
   const allTags = Array.from(new Set(tags.map(tag => tag.name)));
@@ -368,61 +326,7 @@ const TasksPage = () => {
           </Card>
         ) : (
           tasks.map((task) => (
-            <Card key={task.id} className={cn("transition-all hover:shadow-md", task.isCompleted && "opacity-75")}>
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3 md:space-x-4">
-                  <Checkbox
-                    checked={task.isCompleted}
-                    onCheckedChange={() => handleToggleTask(task.id, task.isCompleted)}
-                    className={cn('mt-1 touch-target', getFocusRing())}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className={cn("font-medium break-words", task.isCompleted && "line-through text-muted-foreground")}>
-                      {task.title}
-                    </h3>
-                    {task.description && (
-                      <p className={cn("text-sm text-muted-foreground mt-1 break-words", task.isCompleted && "line-through")}>
-                        {task.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <Badge className={getPriorityColor(task.priority)}>
-                        {task.priority}
-                      </Badge>
-                      {task.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {task.dueDate && (
-                        <span className="text-xs text-muted-foreground">
-                          Due: {format(new Date(task.dueDate), "MMM d, yyyy")}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        🍅 {task.completedPomodoros}/{task.estimatedPomodoros}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Button variant="ghost" size="sm" className={cn('touch-target', getFocusRing())}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit task</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDeleteTask(task.id)}
-                      disabled={deleteTaskMutation.isPending}
-                      className={cn('touch-target text-destructive hover:text-destructive', getFocusRing())}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete task</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TaskCard key={task.id} task={task} />
           ))
         )}
       </div>
