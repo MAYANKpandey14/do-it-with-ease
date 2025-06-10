@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { getFocusRing } from '@/lib/theme';
 import { useToast } from '@/hooks/use-toast';
 import TaskEditDialog from './TaskEditDialog';
+import DeleteTaskDialog from './DeleteTaskDialog';
 
 interface TaskCardProps {
   task: Task;
@@ -19,6 +20,7 @@ interface TaskCardProps {
 
 const TaskCard = ({ task }: TaskCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const { toast } = useToast();
@@ -41,6 +43,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
   const handleDeleteTask = async () => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
+      setIsDeleteDialogOpen(false);
       toast({
         title: 'Task deleted',
         description: 'The task has been removed successfully.',
@@ -56,10 +59,10 @@ const TaskCard = ({ task }: TaskCardProps) => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/20';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/20';
-      default: return 'bg-muted text-muted-foreground border-border hover:bg-muted';
+      case 'high': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -77,6 +80,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
             <Checkbox
               checked={task.isCompleted}
               onCheckedChange={handleToggleTask}
+              priority={task.priority}
               className={cn('mt-1 touch-target', getFocusRing())}
             />
             
@@ -140,7 +144,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={handleDeleteTask}
+                onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={deleteTaskMutation.isPending}
                 className={cn('touch-target text-muted-foreground hover:text-destructive', getFocusRing())}
               >
@@ -156,6 +160,13 @@ const TaskCard = ({ task }: TaskCardProps) => {
         task={task}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+      />
+
+      <DeleteTaskDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeleteTask}
+        taskTitle={task.title}
       />
     </>
   );

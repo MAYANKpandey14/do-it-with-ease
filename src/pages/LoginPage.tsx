@@ -64,11 +64,11 @@ const LoginPage = () => {
 
   if (showResetPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md relative">
-          <div className="absolute top-0 right-0 -mt-16">
-            <ThemeToggle />
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <ThemeToggle />
+        </div>
+        <div className="w-full max-w-md">
           <Card className="w-full">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
@@ -94,11 +94,11 @@ const LoginPage = () => {
                   {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </form>
-              <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-4 text-center text-sm text-muted-foreground">
                 Remember your password?{' '}
                 <button 
                   onClick={() => setShowResetPassword(false)}
-                  className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-primary hover:text-primary/80 transition-colors"
                 >
                   Sign in
                 </button>
@@ -111,11 +111,11 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md relative">
-        <div className="absolute top-0 right-0 -mt-16">
-          <ThemeToggle />
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md">
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Sign in to FocusFlow</CardTitle>
@@ -157,15 +157,15 @@ const LoginPage = () => {
             <div className="mt-4 text-center">
               <button 
                 onClick={() => setShowResetPassword(true)}
-                className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
               >
                 Forgot your password?
               </button>
             </div>
 
-            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-4 text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link to="/register" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+              <Link to="/register" className="text-primary hover:text-primary/80 transition-colors">
                 Sign up
               </Link>
             </p>
