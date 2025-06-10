@@ -26,9 +26,12 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const { profile, updateProfile } = useAuthStore();
+  const { profile, updateProfile, user } = useAuthStore();
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
-  const theme = (profile?.theme as Theme) || 'system';
+  const [localTheme, setLocalTheme] = useState<Theme>('system');
+  
+  // Use profile theme if user is logged in, otherwise use local theme
+  const theme = user ? (profile?.theme as Theme) || 'system' : localTheme;
 
   // Detect system theme preference
   useEffect(() => {
@@ -47,12 +50,34 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  // Load local theme from localStorage on mount if no user
+  useEffect(() => {
+    if (!user) {
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      if (savedTheme) {
+        setLocalTheme(savedTheme);
+      }
+    }
+  }, [user]);
+
   const setTheme = async (newTheme: Theme) => {
-    try {
-      await updateProfile({ theme: newTheme });
+    if (user) {
+      // User is logged in, save to profile
+      try {
+        await updateProfile({ theme: newTheme });
+        applyTheme(newTheme);
+      } catch (error) {
+        console.error('Failed to update theme:', error);
+        // Fallback to local storage if profile update fails
+        localStorage.setItem('theme', newTheme);
+        setLocalTheme(newTheme);
+        applyTheme(newTheme);
+      }
+    } else {
+      // User is not logged in, save to local storage
+      localStorage.setItem('theme', newTheme);
+      setLocalTheme(newTheme);
       applyTheme(newTheme);
-    } catch (error) {
-      console.error('Failed to update theme:', error);
     }
   };
 
