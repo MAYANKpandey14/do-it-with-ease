@@ -1,4 +1,3 @@
-
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
@@ -93,21 +92,29 @@ const Layout = () => {
       <div className="min-h-screen bg-background flex w-full">
         {/* Desktop Sidebar */}
         {!isMobile && (
-          <div className="w-64 bg-card shadow-lg flex flex-col border-r">
+          <div className="w-64 bg-card shadow-lg flex flex-col border-r relative">
             <div className="flex items-center px-6 py-4 border-b">
               <div className="text-xl font-bold text-foreground">FocusFlow</div>
             </div>
             
             <nav className="mt-6 flex-1 overflow-y-auto relative" role="navigation" aria-label="Main navigation">
-              {/* Active indicator background */}
-              <div 
-                className="absolute left-0 w-1 bg-primary transition-all duration-300 ease-in-out rounded-r-full"
-                style={{
-                  height: '48px',
-                  top: `${navigation.findIndex(item => item.href === location.pathname) * 48 + 24}px`,
-                  opacity: navigation.some(item => item.href === location.pathname) ? 1 : 0
-                }}
-              />
+              {/* Active indicator background - repositioned and improved */}
+              {navigation.map((item, index) => {
+                const isActive = location.pathname === item.href;
+                if (isActive) {
+                  return (
+                    <div 
+                      key="active-indicator"
+                      className="absolute left-0 w-1 bg-primary transition-all duration-500 ease-in-out rounded-r-full z-10"
+                      style={{
+                        height: '48px',
+                        top: `${index * 56 + 4}px`,
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })}
               
               {navigation.map((item, index) => {
                 const Icon = item.icon;
@@ -118,27 +125,37 @@ const Layout = () => {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      'flex items-center px-6 py-3 text-sm font-medium transition-all duration-300 ease-in-out',
-                      'min-h-[48px] relative overflow-hidden group', // Touch-friendly even on desktop
+                      'flex items-center px-6 py-3 mx-2 my-1 text-sm font-medium transition-all duration-300 ease-in-out',
+                      'min-h-[48px] relative overflow-hidden group rounded-lg',
                       getFocusRing(),
                       isActive
-                        ? 'bg-primary/10 text-primary transform translate-x-2'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent hover:transform hover:translate-x-1'
+                        ? 'bg-primary/10 text-primary shadow-sm border-l-4 border-primary ml-0 mr-2'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:shadow-sm hover:scale-[1.02]'
                     )}
                   >
-                    {/* Hover background effect */}
+                    {/* Enhanced hover background effect */}
                     <div className={cn(
-                      "absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent transition-all duration-300 ease-in-out",
+                      "absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent transition-all duration-300 ease-in-out rounded-lg",
                       isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     )} />
                     
                     <Icon className={cn(
-                      "mr-3 h-5 w-5 transition-all duration-300 ease-in-out",
-                      isActive ? "transform scale-110" : "group-hover:transform group-hover:scale-105"
+                      "mr-3 h-5 w-5 transition-all duration-300 ease-in-out relative z-10",
+                      isActive 
+                        ? "transform scale-110 text-primary" 
+                        : "group-hover:transform group-hover:scale-105 group-hover:text-primary"
                     )} />
-                    <span className="relative z-10 transition-all duration-300 ease-in-out">
+                    <span className={cn(
+                      "relative z-10 transition-all duration-300 ease-in-out",
+                      isActive ? "font-semibold" : "group-hover:font-medium"
+                    )}>
                       {item.name}
                     </span>
+
+                    {/* Active indicator dot */}
+                    {isActive && (
+                      <div className="absolute right-3 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    )}
                   </Link>
                 );
               })}
@@ -146,18 +163,18 @@ const Layout = () => {
 
             {/* Desktop User Profile */}
             <div className="sticky bottom-0 w-full p-4 border-t bg-card mt-auto">
-              <div className="flex items-center space-x-3">
-                <Avatar className="transition-transform duration-200 ease-in-out hover:scale-110">
+              <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-all duration-200 ease-in-out group">
+                <Avatar className="transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-lg">
                   <AvatarImage 
                     src={getAvatarUrl() || undefined} 
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
                     {profile?.full_name || profile?.email}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -169,7 +186,7 @@ const Layout = () => {
                   size="sm"
                   onClick={handleLogoutClick}
                   className={cn(
-                    'text-muted-foreground hover:text-foreground transition-all duration-200 ease-in-out hover:scale-110',
+                    'text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-sm',
                     getFocusRing()
                   )}
                   aria-label="Sign out"
@@ -185,7 +202,7 @@ const Layout = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Mobile Header */}
           {isMobile && (
-            <header className="bg-card border-b px-4 py-3 flex items-center justify-between">
+            <header className="bg-card border-b px-4 py-3 flex items-center justify-between shadow-sm">
               <MobileNavigation
                 isOpen={mobileNavOpen}
                 onToggle={() => setMobileNavOpen(!mobileNavOpen)}
@@ -197,7 +214,7 @@ const Layout = () => {
                     src={getAvatarUrl() || undefined} 
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
                   />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -206,7 +223,7 @@ const Layout = () => {
                   size="sm"
                   onClick={handleLogoutClick}
                   className={cn(
-                    'text-muted-foreground hover:text-foreground transition-all duration-200 ease-in-out hover:scale-110',
+                    'text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-in-out hover:scale-110',
                     getFocusRing()
                   )}
                   aria-label="Sign out"

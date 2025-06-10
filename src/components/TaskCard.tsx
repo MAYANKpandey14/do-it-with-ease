@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Calendar, Timer } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { getFocusRing } from '@/lib/theme';
@@ -69,20 +69,20 @@ const TaskCard = ({ task }: TaskCardProps) => {
   return (
     <>
       <Card className={cn(
-        "transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] border-l-4 group",
-        task.isCompleted && "opacity-75 scale-[0.98]",
-        task.priority === 'high' && "border-l-red-500",
-        task.priority === 'medium' && "border-l-yellow-500",
-        task.priority === 'low' && "border-l-green-500"
+        "transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.01] border-l-4 group hover:-translate-y-1",
+        task.isCompleted && "opacity-75 scale-[0.98] hover:scale-[0.99]",
+        task.priority === 'high' && "border-l-red-500 hover:border-l-red-400",
+        task.priority === 'medium' && "border-l-yellow-500 hover:border-l-yellow-400",
+        task.priority === 'low' && "border-l-green-500 hover:border-l-green-400"
       )}>
         <CardContent className="p-5">
           <div className="flex items-start space-x-4">
-            <div className="transition-transform duration-200 ease-in-out hover:scale-110">
+            <div className="transition-all duration-200 ease-in-out hover:scale-110 pt-1">
               <Checkbox
                 checked={task.isCompleted}
                 onCheckedChange={handleToggleTask}
                 priority={task.priority}
-                className={cn('mt-1 touch-target', getFocusRing())}
+                className={cn('touch-target', getFocusRing())}
               />
             </div>
             
@@ -91,14 +91,14 @@ const TaskCard = ({ task }: TaskCardProps) => {
               <div className="transition-all duration-300 ease-in-out">
                 <h3 className={cn(
                   "font-semibold text-lg leading-tight break-words transition-all duration-300 ease-in-out",
-                  task.isCompleted && "line-through text-muted-foreground transform scale-95"
+                  task.isCompleted && "line-through text-muted-foreground"
                 )}>
                   {task.title}
                 </h3>
                 {task.description && (
                   <p className={cn(
                     "text-muted-foreground mt-2 text-sm leading-relaxed break-words transition-all duration-300 ease-in-out",
-                    task.isCompleted && "line-through"
+                    task.isCompleted && "line-through opacity-60"
                   )}>
                     {task.description}
                   </p>
@@ -107,25 +107,32 @@ const TaskCard = ({ task }: TaskCardProps) => {
 
               {/* Metadata Row */}
               <div className="flex flex-wrap items-center gap-3">
-                <Badge className={cn('px-3 py-1 text-xs font-medium transition-all duration-200 ease-in-out hover:scale-105', getPriorityColor(task.priority))}>
+                <Badge className={cn(
+                  'px-3 py-1 text-xs font-medium transition-all duration-200 ease-in-out hover:scale-105 shadow-sm',
+                  getPriorityColor(task.priority)
+                )}>
                   {task.priority}
                 </Badge>
                 
                 {task.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs px-2 py-1 transition-all duration-200 ease-in-out hover:scale-105">
+                  <Badge 
+                    key={tag} 
+                    variant="outline" 
+                    className="text-xs px-2 py-1 transition-all duration-200 ease-in-out hover:scale-105 hover:bg-accent hover:shadow-sm"
+                  >
                     {tag}
                   </Badge>
                 ))}
                 
                 {task.dueDate && (
-                  <div className="flex items-center text-xs text-muted-foreground transition-all duration-200 ease-in-out">
-                    <span className="mr-1">📅</span>
+                  <div className="flex items-center text-xs text-muted-foreground transition-all duration-200 ease-in-out hover:text-foreground group/date">
+                    <Calendar className="mr-1 h-3 w-3 transition-all duration-200 ease-in-out group-hover/date:scale-110 group-hover/date:text-primary" />
                     Due: {format(new Date(task.dueDate), "MMM d, yyyy")}
                   </div>
                 )}
                 
-                <div className="flex items-center text-xs text-muted-foreground transition-all duration-200 ease-in-out">
-                  <span className="mr-1">🍅</span>
+                <div className="flex items-center text-xs text-muted-foreground transition-all duration-200 ease-in-out hover:text-foreground group/pomodoro">
+                  <Timer className="mr-1 h-3 w-3 transition-all duration-200 ease-in-out group-hover/pomodoro:scale-110 group-hover/pomodoro:text-primary" />
                   {task.completedPomodoros}/{task.estimatedPomodoros}
                 </div>
               </div>
@@ -137,7 +144,10 @@ const TaskCard = ({ task }: TaskCardProps) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setIsEditDialogOpen(true)}
-                className={cn('touch-target text-muted-foreground hover:text-foreground transition-all duration-200 ease-in-out hover:scale-110', getFocusRing())}
+                className={cn(
+                  'touch-target text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-sm',
+                  getFocusRing()
+                )}
               >
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit task</span>
@@ -148,7 +158,10 @@ const TaskCard = ({ task }: TaskCardProps) => {
                 size="sm" 
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={deleteTaskMutation.isPending}
-                className={cn('touch-target text-muted-foreground hover:text-destructive transition-all duration-200 ease-in-out hover:scale-110', getFocusRing())}
+                className={cn(
+                  'touch-target text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-sm',
+                  getFocusRing()
+                )}
               >
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Delete task</span>
