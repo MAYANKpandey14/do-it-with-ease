@@ -6,12 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
 import { MobileNavigation } from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  Clock, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Clock,
+  BarChart3,
+  Settings,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,15 +38,15 @@ const Layout = () => {
 
   const getAvatarUrl = () => {
     if (!profile?.avatar_url) return null;
-    
+
     if (profile.avatar_url.startsWith('http')) {
       return profile.avatar_url;
     }
-    
+
     const { data } = supabase.storage
       .from('avatars')
       .getPublicUrl(profile.avatar_url);
-    
+
     return data.publicUrl;
   };
 
@@ -96,9 +96,9 @@ const Layout = () => {
             <div className="flex items-center px-6 py-4 border-b">
               <div className="text-xl font-bold text-foreground">FocusFlow</div>
             </div>
-            
+
             <nav className="mt-6 flex-1 overflow-y-auto relative" role="navigation" aria-label="Main navigation">
-              {/* Active indicator background - repositioned and improved */}
+              {/* Active indicator background - repositioned and improved
               {navigation.map((item, index) => {
                 const isActive = location.pathname === item.href;
                 if (isActive) {
@@ -114,12 +114,12 @@ const Layout = () => {
                   );
                 }
                 return null;
-              })}
-              
+              })} */}
+
               {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
-                
+
                 return (
                   <Link
                     key={item.name}
@@ -138,11 +138,11 @@ const Layout = () => {
                       "absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent transition-all duration-300 ease-in-out rounded-lg",
                       isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     )} />
-                    
+
                     <Icon className={cn(
                       "mr-3 h-5 w-5 transition-all duration-300 ease-in-out relative z-10",
-                      isActive 
-                        ? "transform scale-110 text-primary" 
+                      isActive
+                        ? "transform scale-110 text-primary"
                         : "group-hover:transform group-hover:scale-105 group-hover:text-primary"
                     )} />
                     <span className={cn(
@@ -164,14 +164,16 @@ const Layout = () => {
             {/* Desktop User Profile */}
             <div className="sticky bottom-0 w-full p-4 border-t bg-card mt-auto">
               <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/50 transition-all duration-200 ease-in-out group">
-                <Avatar className="transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-lg">
-                  <AvatarImage 
-                    src={getAvatarUrl() || undefined} 
+               <Avatar className="h-8 w-8 transition-transform duration-200 ease-in-out hover:scale-110">
+                  <Link to="/settings">
+                  <AvatarImage
+                    src={getAvatarUrl() || undefined}
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
                   />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                    {initials}
-                  </AvatarFallback>
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                    </Link>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
@@ -210,13 +212,15 @@ const Layout = () => {
               <div className="text-lg font-bold text-foreground">FocusFlow</div>
               <div className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8 transition-transform duration-200 ease-in-out hover:scale-110">
-                  <AvatarImage 
-                    src={getAvatarUrl() || undefined} 
+                  <Link to="/settings">
+                  <AvatarImage
+                    src={getAvatarUrl() || undefined}
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
                   />
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                    {initials}
-                  </AvatarFallback>
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                    </Link>
                 </Avatar>
                 <Button
                   variant="ghost"

@@ -82,7 +82,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
                 checked={task.isCompleted}
                 onCheckedChange={handleToggleTask}
                 priority={task.priority}
-                className={cn('touch-target', getFocusRing())}
+                className={cn('h-6 w-6', getFocusRing())}
               />
             </div>
             
