@@ -1,3 +1,4 @@
+
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
@@ -97,8 +98,18 @@ const Layout = () => {
               <div className="text-xl font-bold text-foreground">FocusFlow</div>
             </div>
             
-            <nav className="mt-6 flex-1 overflow-y-auto" role="navigation" aria-label="Main navigation">
-              {navigation.map((item) => {
+            <nav className="mt-6 flex-1 overflow-y-auto relative" role="navigation" aria-label="Main navigation">
+              {/* Active indicator background */}
+              <div 
+                className="absolute left-0 w-1 bg-primary transition-all duration-300 ease-in-out rounded-r-full"
+                style={{
+                  height: '48px',
+                  top: `${navigation.findIndex(item => item.href === location.pathname) * 48 + 24}px`,
+                  opacity: navigation.some(item => item.href === location.pathname) ? 1 : 0
+                }}
+              />
+              
+              {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 
@@ -107,16 +118,27 @@ const Layout = () => {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      'flex items-center px-6 py-3 text-sm font-medium transition-colors',
-                      'min-h-[44px]', // Touch-friendly even on desktop
+                      'flex items-center px-6 py-3 text-sm font-medium transition-all duration-300 ease-in-out',
+                      'min-h-[48px] relative overflow-hidden group', // Touch-friendly even on desktop
                       getFocusRing(),
                       isActive
-                        ? 'bg-primary/10 text-primary border-r-2 border-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        ? 'bg-primary/10 text-primary transform translate-x-2'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent hover:transform hover:translate-x-1'
                     )}
                   >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
+                    {/* Hover background effect */}
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent transition-all duration-300 ease-in-out",
+                      isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )} />
+                    
+                    <Icon className={cn(
+                      "mr-3 h-5 w-5 transition-all duration-300 ease-in-out",
+                      isActive ? "transform scale-110" : "group-hover:transform group-hover:scale-105"
+                    )} />
+                    <span className="relative z-10 transition-all duration-300 ease-in-out">
+                      {item.name}
+                    </span>
                   </Link>
                 );
               })}
@@ -125,7 +147,7 @@ const Layout = () => {
             {/* Desktop User Profile */}
             <div className="sticky bottom-0 w-full p-4 border-t bg-card mt-auto">
               <div className="flex items-center space-x-3">
-                <Avatar>
+                <Avatar className="transition-transform duration-200 ease-in-out hover:scale-110">
                   <AvatarImage 
                     src={getAvatarUrl() || undefined} 
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
@@ -147,7 +169,7 @@ const Layout = () => {
                   size="sm"
                   onClick={handleLogoutClick}
                   className={cn(
-                    'text-muted-foreground hover:text-foreground',
+                    'text-muted-foreground hover:text-foreground transition-all duration-200 ease-in-out hover:scale-110',
                     getFocusRing()
                   )}
                   aria-label="Sign out"
@@ -170,7 +192,7 @@ const Layout = () => {
               />
               <div className="text-lg font-bold text-foreground">FocusFlow</div>
               <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 transition-transform duration-200 ease-in-out hover:scale-110">
                   <AvatarImage 
                     src={getAvatarUrl() || undefined} 
                     alt={`${profile?.full_name || 'User'}'s profile picture`}
@@ -184,7 +206,7 @@ const Layout = () => {
                   size="sm"
                   onClick={handleLogoutClick}
                   className={cn(
-                    'text-muted-foreground hover:text-foreground',
+                    'text-muted-foreground hover:text-foreground transition-all duration-200 ease-in-out hover:scale-110',
                     getFocusRing()
                   )}
                   aria-label="Sign out"
