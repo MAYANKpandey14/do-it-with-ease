@@ -61,6 +61,51 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          long_break_duration: number
+          long_break_interval: number
+          notifications_enabled: boolean
+          pomodoro_duration: number
+          short_break_duration: number
+          sound_enabled: boolean
+          theme: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          long_break_duration?: number
+          long_break_interval?: number
+          notifications_enabled?: boolean
+          pomodoro_duration?: number
+          short_break_duration?: number
+          sound_enabled?: boolean
+          theme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          long_break_duration?: number
+          long_break_interval?: number
+          notifications_enabled?: boolean
+          pomodoro_duration?: number
+          short_break_duration?: number
+          sound_enabled?: boolean
+          theme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           color: string
