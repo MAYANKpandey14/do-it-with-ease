@@ -14,7 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pomodoro_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          session_type: string
+          started_at: string
+          status: string
+          task_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          session_type: string
+          started_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          session_type?: string
+          started_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pomodoro_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      task_tags: {
+        Row: {
+          created_at: string
+          id: string
+          tag_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tag_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tag_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_tags_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed_pomodoros: number
+          created_at: string
+          description: string | null
+          due_date: string | null
+          estimated_pomodoros: number
+          id: string
+          is_completed: boolean
+          priority: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_pomodoros?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          estimated_pomodoros?: number
+          id?: string
+          is_completed?: boolean
+          priority?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_pomodoros?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          estimated_pomodoros?: number
+          id?: string
+          is_completed?: boolean
+          priority?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
