@@ -117,18 +117,18 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     setImageError(true);
   };
 
-  const initials = profile?.full_name
+  const initials = profile?.display_name
     ?.split(' ')
     .map(n => n[0])
     .join('')
-    .toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'U';
+    .toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <div className="flex items-center space-x-4">
       <Avatar className={sizeClasses[size]} role="img">
         <AvatarImage 
           src={getAvatarUrl() || undefined} 
-          alt={`${profile?.full_name || 'User'}'s profile picture`}
+          alt={`${profile?.display_name || 'User'}'s profile picture`}
           onError={handleImageError}
         />
         <AvatarFallback 

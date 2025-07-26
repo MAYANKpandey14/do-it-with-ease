@@ -5,10 +5,9 @@ import type { User, Session } from '@supabase/supabase-js';
 
 interface Profile {
   id: string;
-  email: string;
-  full_name: string | null;
+  display_name: string | null;
   avatar_url: string | null;
-  theme: string;
+  theme: string | null;
   pomodoro_duration: number;
   short_break_duration: number;
   long_break_duration: number;
@@ -110,6 +109,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: sanitizedEmail,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: sanitizedFullName || sanitizedEmail.split('@')[0]
           }
@@ -209,8 +209,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Security: Sanitize profile updates
     const sanitizedUpdates: Partial<Profile> = {};
     
-    if (updates.full_name !== undefined) {
-      sanitizedUpdates.full_name = updates.full_name ? sanitizeInput(updates.full_name).substring(0, 100) : null;
+    if (updates.display_name !== undefined) {
+      sanitizedUpdates.display_name = updates.display_name ? sanitizeInput(updates.display_name).substring(0, 100) : null;
     }
     
     if (updates.avatar_url !== undefined) {

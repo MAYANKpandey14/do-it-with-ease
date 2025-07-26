@@ -30,8 +30,7 @@ const SettingsPage = () => {
   const { toast } = useToast();
   
   const [profileData, setProfileData] = useState({
-    full_name: profile?.full_name || '',
-    email: profile?.email || '',
+    display_name: profile?.display_name || '',
   });
 
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -47,8 +46,7 @@ const SettingsPage = () => {
   useEffect(() => {
     if (profile) {
       setProfileData({
-        full_name: profile.full_name || '',
-        email: profile.email || '',
+        display_name: profile.display_name || '',
       });
       setPreferences({
         theme: profile.theme || 'light',
@@ -124,12 +122,12 @@ const SettingsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Display Name</Label>
               <Input
                 id="name"
-                value={profileData.full_name}
-                onChange={(e) => setProfileData(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Enter your full name"
+                value={profileData.display_name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
+                placeholder="Enter your display name"
               />
             </div>
             <div>
@@ -137,7 +135,7 @@ const SettingsPage = () => {
               <Input
                 id="email"
                 type="email"
-                value={profileData.email}
+                value={user?.email || ''}
                 disabled
                 placeholder="Enter your email"
               />

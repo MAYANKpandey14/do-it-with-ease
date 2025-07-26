@@ -22,7 +22,7 @@ import { getFocusRing } from '@/lib/theme';
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuthStore();
+  const { user, profile, signOut } = useAuthStore();
   const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -73,11 +73,11 @@ const Layout = () => {
     }
   };
 
-  const initials = profile?.full_name
+  const initials = profile?.display_name
     ?.split(' ')
     .map(n => n[0])
     .join('')
-    .toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'U';
+    .toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <>
@@ -168,7 +168,7 @@ const Layout = () => {
                   <Link to="/settings">
                   <AvatarImage
                     src={getAvatarUrl() || undefined}
-                    alt={`${profile?.full_name || 'User'}'s profile picture`}
+                    alt={`${profile?.display_name || 'User'}'s profile picture`}
                   />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                       {initials}
@@ -177,10 +177,10 @@ const Layout = () => {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
-                    {profile?.full_name || profile?.email}
+                    {profile?.display_name || user?.email}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {profile?.email}
+                    {user?.email}
                   </p>
                 </div>
                 <Button
@@ -215,7 +215,7 @@ const Layout = () => {
                   <Link to="/settings">
                   <AvatarImage
                     src={getAvatarUrl() || undefined}
-                    alt={`${profile?.full_name || 'User'}'s profile picture`}
+                    alt={`${profile?.display_name || 'User'}'s profile picture`}
                   />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                       {initials}
