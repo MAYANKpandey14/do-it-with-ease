@@ -186,10 +186,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     set({ loading: true });
     try {
+      // Get current URL without any hash fragments
+      const currentUrl = new URL(window.location.href);
+      const redirectUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+      
+      console.log('Google OAuth redirect URL:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
@@ -199,6 +209,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
+      // Don't set loading to false here as it will be handled by the auth state change
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
@@ -210,10 +221,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUpWithGoogle: async () => {
     set({ loading: true });
     try {
+      // Get current URL without any hash fragments
+      const currentUrl = new URL(window.location.href);
+      const redirectUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+      
+      console.log('Google OAuth redirect URL:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
@@ -223,6 +244,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
+      // Don't set loading to false here as it will be handled by the auth state change
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
