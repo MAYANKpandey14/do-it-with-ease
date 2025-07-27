@@ -24,6 +24,8 @@ interface AuthState {
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ user: User | null; error: any }>;
+  signInWithGoogle: () => Promise<{ user: User | null; error: any }>;
+  signUpWithGoogle: () => Promise<{ user: User | null; error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -178,6 +180,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.error('Sign out error:', error);
         throw error;
       }
+    }
+  },
+
+  signInWithGoogle: async () => {
+    set({ loading: true });
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+
+      // OAuth flow will handle the redirect, so we don't need to set state here
+      // The onAuthStateChange listener will handle the authentication
+      return { user: null, error: null };
+    } catch (error) {
+      set({ loading: false });
+      console.error('Google sign in error:', error);
+      return { user: null, error };
+    }
+  },
+
+  signUpWithGoogle: async () => {
+    set({ loading: true });
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+
+      // OAuth flow will handle the redirect, so we don't need to set state here
+      // The onAuthStateChange listener will handle the authentication
+      return { user: null, error: null };
+    } catch (error) {
+      set({ loading: false });
+      console.error('Google sign up error:', error);
+      return { user: null, error };
     }
   },
 
