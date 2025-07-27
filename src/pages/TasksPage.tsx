@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTasks, useCreateTask } from '../hooks/useTasks';
 import { useTags } from '../hooks/useTags';
 import { useTasksStore } from '../stores/tasksStore';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Loader2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,26 @@ const TasksPage = () => {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+  };
+
+  // Keyboard shortcut for Add Task (ALT+T)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        setIsAddDialogOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Remove tag filter function
+  const handleRemoveTagFilter = (tagToRemove: string) => {
+    const currentTags = filters.tags || [];
+    const newTags = currentTags.filter(t => t !== tagToRemove);
+    setFilters({ ...filters, tags: newTags.length > 0 ? newTags : undefined });
   };
 
   const allTags = Array.from(new Set(tags.map(tag => tag.name)));
@@ -291,25 +311,41 @@ const TasksPage = () => {
             <div>
               <Label className="text-sm font-medium">Filter by tags:</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {allTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={filters.tags?.includes(tag) ? "default" : "outline"}
-                    className={cn(
-                      'cursor-pointer transition-colors touch-target',
-                      getFocusRing()
-                    )}
-                    onClick={() => {
-                      const currentTags = filters.tags || [];
-                      const newTags = currentTags.includes(tag)
-                        ? currentTags.filter(t => t !== tag)
-                        : [...currentTags, tag];
-                      setFilters({ ...filters, tags: newTags.length > 0 ? newTags : undefined });
-                    }}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+                {allTags.map((tag) => {
+                  const isActive = filters.tags?.includes(tag);
+                  return (
+                    <Badge
+                      key={tag}
+                      variant={isActive ? "default" : "outline"}
+                      className={cn(
+                        'cursor-pointer transition-colors touch-target group relative',
+                        getFocusRing(),
+                        isActive && 'pr-6'
+                      )}
+                      onClick={() => {
+                        const currentTags = filters.tags || [];
+                        const newTags = currentTags.includes(tag)
+                          ? currentTags.filter(t => t !== tag)
+                          : [...currentTags, tag];
+                        setFilters({ ...filters, tags: newTags.length > 0 ? newTags : undefined });
+                      }}
+                    >
+                      {tag}
+                      {isActive && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveTagFilter(tag);
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 rounded-full p-0.5"
+                          aria-label={`Remove ${tag} filter`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           )}

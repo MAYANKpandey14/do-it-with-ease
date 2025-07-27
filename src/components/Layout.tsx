@@ -31,8 +31,8 @@ const Layout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-    { name: 'Timer', href: '/timer', icon: Clock },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Timer', href: '/timer', icon: Clock },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
