@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { compressImage, validateImageFile } from '@/utils/imageCompression';
 
 interface AvatarUploadProps {
   size?: 'sm' | 'md' | 'lg';
@@ -47,8 +48,22 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
+      // Validate and compress image
+      validateImageFile(file);
+      
+      toast({
+        title: 'Compressing image...',
+        description: 'Optimizing your image for upload.',
+      });
+
+      const compressedBlob = await compressImage(file, {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.8,
+        format: 'webp'
+      });
+
+      const filePath = `${user.id}/avatar.webp`;
 
       // Delete existing avatar if it exists
       if (profile?.avatar_url && !profile.avatar_url.startsWith('http')) {
@@ -59,7 +74,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, compressedBlob, { 
+          upsert: true,
+          contentType: 'image/webp'
+        });
 
       if (uploadError) throw uploadError;
 
@@ -90,27 +108,16 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    try {
+      validateImageFile(file);
+      uploadAvatar(file);
+    } catch (error: any) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please select an image file.',
+        title: 'Invalid file',
+        description: error.message,
         variant: 'destructive',
       });
-      return;
     }
-
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Please select an image smaller than 5MB.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    uploadAvatar(file);
   };
 
   const handleImageError = () => {
