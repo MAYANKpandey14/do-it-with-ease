@@ -111,23 +111,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: sanitizedFullName || sanitizedEmail.split('@')[0]
+            display_name: sanitizedFullName || sanitizedEmail.split('@')[0]
           }
         }
       });
 
       if (error) throw error;
 
+      // Always set to non-authenticated state after signup
+      // User will be authenticated only after email verification
       set({ 
-        user: data.user, 
-        session: data.session,
-        isAuthenticated: !!data.user,
+        user: null, 
+        session: null,
+        isAuthenticated: false,
         loading: false 
       });
-
-      if (data.user) {
-        await get().loadProfile();
-      }
     } catch (error) {
       set({ loading: false });
       console.error('Sign up error:', error);

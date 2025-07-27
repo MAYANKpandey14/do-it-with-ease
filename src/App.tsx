@@ -11,6 +11,7 @@ import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import TimerPage from "./pages/TimerPage";
@@ -43,6 +44,10 @@ const App = () => {
               <Route 
                 path="/reset-password" 
                 element={<ResetPasswordPage />} 
+              />
+              <Route 
+                path="/verify-email" 
+                element={<EmailVerificationPage />} 
               />
               
               {/* Protected routes */}

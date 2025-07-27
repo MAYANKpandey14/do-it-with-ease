@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { PasswordStrength } from '@/components/ui/password-strength';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -41,10 +43,12 @@ const RegisterPage = () => {
 
     try {
       await signUp(email, password, fullName);
-      navigate('/');
+      // Store email for verification page and redirect
+      localStorage.setItem('pendingVerificationEmail', email);
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       toast({
         title: 'Account created!',
-        description: 'Welcome to FocusFlow. Your productivity journey starts now.',
+        description: 'Please check your email to verify your account.',
       });
     } catch (error: any) {
       toast({
@@ -96,9 +100,8 @@ const RegisterPage = () => {
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -106,12 +109,12 @@ const RegisterPage = () => {
                   placeholder="Enter your password"
                   minLength={6}
                 />
+                <PasswordStrength password={password} className="mt-2" />
               </div>
               <div>
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -119,6 +122,7 @@ const RegisterPage = () => {
                   placeholder="Confirm your password"
                   minLength={6}
                 />
+                <PasswordStrength password={confirmPassword} className="mt-2" />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create Account'}
