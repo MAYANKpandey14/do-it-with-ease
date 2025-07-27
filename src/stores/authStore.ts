@@ -351,18 +351,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 supabase.auth.onAuthStateChange((event, session) => {
   const { loadProfile } = useAuthStore.getState();
   
-  console.log('Auth state changed:', event, session?.user?.email, 'Email confirmed:', session?.user?.email_confirmed_at);
+  console.log('=== AUTH STATE CHANGE DEBUG ===');
+  console.log('Event:', event);
+  console.log('User email:', session?.user?.email);
+  console.log('Email confirmed:', session?.user?.email_confirmed_at);
+  console.log('App metadata:', session?.user?.app_metadata);
+  console.log('User metadata:', session?.user?.user_metadata);
+  console.log('Full session:', session);
   
-  // For Google OAuth, users don't need email confirmation
-  const isGoogleProvider = session?.user?.app_metadata?.provider === 'google';
+  // Check multiple possible locations for provider information
+  const isGoogleProvider = 
+    session?.user?.app_metadata?.provider === 'google' ||
+    session?.user?.app_metadata?.providers?.includes('google') ||
+    session?.user?.user_metadata?.provider === 'google' ||
+    (session?.user?.identities && session.user.identities.some(identity => identity.provider === 'google'));
+  
   const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
   const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
+  
+  console.log('Is Google provider:', isGoogleProvider);
+  console.log('Is email confirmed:', isEmailConfirmed);
+  console.log('Should authenticate:', shouldAuthenticate);
+  console.log('=== END DEBUG ===');
   
   useAuthStore.setState({
     user: session?.user ?? null,
     session,
     isAuthenticated: shouldAuthenticate,
-    loading: false // Ensure loading is set to false when auth state changes
+    loading: false
   });
 
   if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
@@ -378,10 +394,26 @@ supabase.auth.onAuthStateChange((event, session) => {
 supabase.auth.getSession().then(({ data: { session } }) => {
   const { loadProfile } = useAuthStore.getState();
   
-  // For Google OAuth, users don't need email confirmation
-  const isGoogleProvider = session?.user?.app_metadata?.provider === 'google';
+  console.log('=== INITIAL SESSION CHECK ===');
+  console.log('Session:', session);
+  if (session?.user) {
+    console.log('User app metadata:', session.user.app_metadata);
+    console.log('User identities:', session.user.identities);
+  }
+  
+  // Check multiple possible locations for provider information
+  const isGoogleProvider = 
+    session?.user?.app_metadata?.provider === 'google' ||
+    session?.user?.app_metadata?.providers?.includes('google') ||
+    session?.user?.user_metadata?.provider === 'google' ||
+    (session?.user?.identities && session.user.identities.some(identity => identity.provider === 'google'));
+  
   const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
   const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
+  
+  console.log('Initial - Is Google provider:', isGoogleProvider);
+  console.log('Initial - Should authenticate:', shouldAuthenticate);
+  console.log('=== END INITIAL CHECK ===');
   
   useAuthStore.setState({
     user: session?.user ?? null,
