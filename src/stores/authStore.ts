@@ -193,10 +193,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        set({ loading: false });
+        throw error;
+      }
 
-      // OAuth flow will handle the redirect, so we don't need to set state here
-      // The onAuthStateChange listener will handle the authentication
+      // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
@@ -215,10 +217,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        set({ loading: false });
+        throw error;
+      }
 
-      // OAuth flow will handle the redirect, so we don't need to set state here
-      // The onAuthStateChange listener will handle the authentication
+      // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
@@ -349,14 +353,16 @@ supabase.auth.onAuthStateChange((event, session) => {
   
   console.log('Auth state changed:', event, session?.user?.email, 'Email confirmed:', session?.user?.email_confirmed_at);
   
-  // Only authenticate if email is confirmed
+  // For Google OAuth, users don't need email confirmation
+  const isGoogleProvider = session?.user?.app_metadata?.provider === 'google';
   const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
-  const shouldAuthenticate = !!session?.user && isEmailConfirmed;
+  const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
   
   useAuthStore.setState({
     user: session?.user ?? null,
     session,
-    isAuthenticated: shouldAuthenticate
+    isAuthenticated: shouldAuthenticate,
+    loading: false // Ensure loading is set to false when auth state changes
   });
 
   if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
@@ -372,14 +378,16 @@ supabase.auth.onAuthStateChange((event, session) => {
 supabase.auth.getSession().then(({ data: { session } }) => {
   const { loadProfile } = useAuthStore.getState();
   
-  // Only authenticate if email is confirmed
+  // For Google OAuth, users don't need email confirmation
+  const isGoogleProvider = session?.user?.app_metadata?.provider === 'google';
   const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
-  const shouldAuthenticate = !!session?.user && isEmailConfirmed;
+  const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
   
   useAuthStore.setState({
     user: session?.user ?? null,
     session,
-    isAuthenticated: shouldAuthenticate
+    isAuthenticated: shouldAuthenticate,
+    loading: false
   });
 
   if (session?.user && shouldAuthenticate) {
