@@ -41,20 +41,21 @@ const RegisterPage = () => {
       return;
     }
 
-    try {
-      await signUp(email, password, fullName);
+    const { user, error } = await signUp(email, password, fullName);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create account. Please try again.',
+        variant: 'destructive',
+      });
+    } else if (user) {
       // Store email for verification page and redirect
       localStorage.setItem('pendingVerificationEmail', email);
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       toast({
         title: 'Account created!',
         description: 'Please check your email to verify your account.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create account. Please try again.',
-        variant: 'destructive',
       });
     }
   };

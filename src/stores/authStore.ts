@@ -22,8 +22,8 @@ interface AuthState {
   session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ user: User | null; error: any }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ user: User | null; error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -69,6 +69,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
 
+      // Check if email is confirmed
+      if (data.user && !data.user.email_confirmed_at) {
+        // Sign out the user if email is not confirmed
+        await supabase.auth.signOut();
+        throw new Error('Please confirm your email address before signing in. Check your inbox for a confirmation link.');
+      }
+
       set({ 
         user: data.user, 
         session: data.session,
@@ -78,11 +85,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Load profile after successful sign in
       await get().loadProfile();
+      
+      return { user: data.user, error: null };
     } catch (error) {
       set({ loading: false });
       // Security: Log errors without exposing sensitive details
       console.error('Sign in error:', error);
-      throw error;
+      return { user: null, error };
     }
   },
 
@@ -109,7 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: sanitizedEmail,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             display_name: sanitizedFullName || sanitizedEmail.split('@')[0]
           }
@@ -126,10 +135,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: false,
         loading: false 
       });
+      
+      return { user: data.user, error: null };
     } catch (error) {
       set({ loading: false });
       console.error('Sign up error:', error);
-      throw error;
+      return { user: null, error };
     }
   },
 
@@ -290,13 +301,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 supabase.auth.onAuthStateChange((event, session) => {
   const { loadProfile } = useAuthStore.getState();
   
+  console.log('Auth state changed:', event, session?.user?.email, 'Email confirmed:', session?.user?.email_confirmed_at);
+  
+  // Only authenticate if email is confirmed
+  const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
+  const shouldAuthenticate = !!session?.user && isEmailConfirmed;
+  
   useAuthStore.setState({
     user: session?.user ?? null,
     session,
-    isAuthenticated: !!session?.user
+    isAuthenticated: shouldAuthenticate
   });
 
-  if (session?.user && event !== 'SIGNED_OUT') {
+  if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
     setTimeout(() => {
       loadProfile();
     }, 0);
@@ -309,13 +326,17 @@ supabase.auth.onAuthStateChange((event, session) => {
 supabase.auth.getSession().then(({ data: { session } }) => {
   const { loadProfile } = useAuthStore.getState();
   
+  // Only authenticate if email is confirmed
+  const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
+  const shouldAuthenticate = !!session?.user && isEmailConfirmed;
+  
   useAuthStore.setState({
     user: session?.user ?? null,
     session,
-    isAuthenticated: !!session?.user
+    isAuthenticated: shouldAuthenticate
   });
 
-  if (session?.user) {
+  if (session?.user && shouldAuthenticate) {
     loadProfile();
   }
 });

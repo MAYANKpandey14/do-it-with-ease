@@ -21,18 +21,30 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await signIn(email, password);
+    const { user, error } = await signIn(email, password);
+    
+    if (error) {
+      let description = error.message || 'Invalid credentials. Please try again.';
+      
+      // Special handling for email confirmation error
+      if (error.message?.includes('confirm your email')) {
+        description = error.message;
+        // Optionally redirect to verification page
+        setTimeout(() => {
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      }
+      
+      toast({
+        title: 'Error',
+        description,
+        variant: 'destructive',
+      });
+    } else if (user) {
       navigate('/');
       toast({
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Invalid credentials. Please try again.',
-        variant: 'destructive',
       });
     }
   };
