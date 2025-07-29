@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/utils/security';
 
 interface Profile {
   id: string;
@@ -53,6 +54,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (email: string, password: string) => {
     set({ loading: true });
     try {
+      // Rate limiting check
+      const clientIdentifier = `signin_${email}`;
+      if (!checkRateLimit(clientIdentifier, 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
+        throw new Error('Too many sign-in attempts. Please try again later.');
+      }
+      
       // Security: Input validation and sanitization
       const sanitizedEmail = sanitizeInput(email).toLowerCase();
       
@@ -60,8 +67,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error('Invalid email format');
       }
 
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters');
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -69,7 +76,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Log security event for failed authentication
+        console.warn('Authentication failed:', {
+          email: sanitizedEmail,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+          ip: 'client-side'
+        });
+        throw error;
+      }
 
       // Check if email is confirmed
       if (data.user && !data.user.email_confirmed_at) {
@@ -77,6 +93,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await supabase.auth.signOut();
         throw new Error('Please confirm your email address before signing in. Check your inbox for a confirmation link.');
       }
+
+      // Log successful authentication
+      console.info('Authentication successful:', {
+        email: sanitizedEmail,
+        timestamp: new Date().toISOString()
+      });
 
       set({ 
         user: data.user, 
@@ -100,6 +122,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email: string, password: string, fullName?: string) => {
     set({ loading: true });
     try {
+      // Rate limiting check
+      const clientIdentifier = `signup_${email}`;
+      if (!checkRateLimit(clientIdentifier, 3, 60 * 60 * 1000)) { // 3 attempts per hour
+        throw new Error('Too many sign-up attempts. Please try again later.');
+      }
+      
       // Security: Input validation and sanitization
       const sanitizedEmail = sanitizeInput(email).toLowerCase();
       const sanitizedFullName = fullName ? sanitizeInput(fullName) : undefined;
@@ -108,8 +136,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error('Invalid email format');
       }
 
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+      // Enhanced password validation
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters');
+      }
+      if (!/[A-Z]/.test(password)) {
+        throw new Error('Password must contain at least one uppercase letter');
+      }
+      if (!/[a-z]/.test(password)) {
+        throw new Error('Password must contain at least one lowercase letter');
+      }
+      if (!/\d/.test(password)) {
+        throw new Error('Password must contain at least one number');
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        throw new Error('Password must contain at least one special character');
       }
 
       if (sanitizedFullName && sanitizedFullName.length > 100) {
@@ -127,7 +168,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Log security event for failed registration
+        console.warn('Registration failed:', {
+          email: sanitizedEmail,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+        throw error;
+      }
+
+      // Log successful registration
+      console.info('Registration successful:', {
+        email: sanitizedEmail,
+        timestamp: new Date().toISOString()
+      });
 
       // Always set to non-authenticated state after signup
       // User will be authenticated only after email verification

@@ -48,6 +48,45 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
     setUploading(true);
     try {
+      // Enhanced security validation
+      if (!file) {
+        throw new Error('No file selected');
+      }
+      
+      // File size validation (max 5MB)
+      const maxSizeInBytes = 5 * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        throw new Error('File size must be less than 5MB');
+      }
+      
+      // MIME type validation
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedMimeTypes.includes(file.type)) {
+        throw new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.');
+      }
+      
+      // File extension validation
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      if (!fileExt || !allowedExtensions.includes(fileExt)) {
+        throw new Error('Invalid file extension');
+      }
+      
+      // File header validation for security
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Check for common image file signatures
+      const isValidImage = 
+        (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8) || // JPEG
+        (uint8Array[0] === 0x89 && uint8Array[1] === 0x50) || // PNG
+        (uint8Array[0] === 0x52 && uint8Array[1] === 0x49) || // WebP (RIFF)
+        (uint8Array[0] === 0x47 && uint8Array[1] === 0x49);   // GIF
+      
+      if (!isValidImage) {
+        throw new Error('Invalid image file format');
+      }
+      
       // Validate and compress image
       validateImageFile(file);
       
@@ -63,7 +102,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         format: 'webp'
       });
 
-      const filePath = `${user.id}/avatar.webp`;
+      // Sanitized file path
+      const sanitizedFilePath = `${user.id}/avatar_${Date.now()}.webp`;
 
       // Delete existing avatar if it exists
       if (profile?.avatar_url && !profile.avatar_url.startsWith('http')) {
@@ -74,7 +114,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, compressedBlob, { 
+        .upload(sanitizedFilePath, compressedBlob, { 
           upsert: true,
           contentType: 'image/webp'
         });
@@ -82,7 +122,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       if (uploadError) throw uploadError;
 
       // Update profile with new avatar URL
-      await updateProfile({ avatar_url: filePath });
+      await updateProfile({ avatar_url: sanitizedFilePath });
       
       // Reload profile to ensure UI updates
       await loadProfile();
@@ -94,6 +134,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         description: 'Your profile picture has been updated successfully.',
       });
     } catch (error: any) {
+      console.error('Avatar upload error:', error);
       toast({
         title: 'Upload failed',
         description: error.message || 'Failed to upload avatar.',

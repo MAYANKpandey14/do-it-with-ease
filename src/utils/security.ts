@@ -74,6 +74,17 @@ export const validateUrl = (url: string, allowedDomains?: string[]): boolean => 
       return false;
     }
     
+    // Prevent localhost and internal IP access (security)
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' || 
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.16.') ||
+        hostname.startsWith('169.254.')) {
+      return false;
+    }
+    
     // If allowed domains are specified, check against them
     if (allowedDomains && allowedDomains.length > 0) {
       return allowedDomains.some(domain => 
@@ -85,6 +96,20 @@ export const validateUrl = (url: string, allowedDomains?: string[]): boolean => 
   } catch {
     return false;
   }
+};
+
+// Enhanced security logging
+export const logSecurityEvent = (event: string, details: Record<string, any>) => {
+  const logEntry = {
+    event,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+    ...details
+  };
+  
+  // In production, this should be sent to a secure logging service
+  console.warn('SECURITY EVENT:', logEntry);
 };
 
 export const rateLimitTracker = new Map<string, { count: number; lastReset: number }>();
