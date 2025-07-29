@@ -41,15 +41,15 @@ const RegisterPage = () => {
       return;
     }
 
-    const { user, error } = await signUp(email, password, fullName);
+    const result = await signUp(email, password, fullName);
     
-    if (error) {
+    if (result.error) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create account. Please try again.',
+        description: result.error.message || 'Failed to create account. Please try again.',
         variant: 'destructive',
       });
-    } else if (user) {
+    } else {
       // Store email for verification page and redirect
       localStorage.setItem('pendingVerificationEmail', email);
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);

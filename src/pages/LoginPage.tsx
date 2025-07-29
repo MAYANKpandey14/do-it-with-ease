@@ -65,14 +65,14 @@ const LoginPage = () => {
       return;
     }
 
-    const { user, error } = await signIn(email, password);
+    const result = await signIn(email, password);
     
-    if (error) {
-      let description = error.message || 'Invalid credentials. Please try again.';
+    if (result.error) {
+      let description = result.error.message || 'Invalid credentials. Please try again.';
       
       // Special handling for email confirmation error
-      if (error.message?.includes('confirm your email')) {
-        description = error.message;
+      if (result.error.message?.includes('confirm your email')) {
+        description = result.error.message;
         // Optionally redirect to verification page
         setTimeout(() => {
           navigate(`/verify-email?email=${encodeURIComponent(email)}`);
@@ -84,7 +84,7 @@ const LoginPage = () => {
         description,
         variant: 'destructive',
       });
-    } else if (user) {
+    } else {
       navigate('/');
       toast({
         title: 'Welcome back!',
