@@ -186,16 +186,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     set({ loading: true });
     try {
-      // Get current URL without any hash fragments
-      const currentUrl = new URL(window.location.href);
-      const redirectUrl = `${currentUrl.origin}${currentUrl.pathname}`;
-      
-      console.log('Google OAuth redirect URL:', redirectUrl);
+      console.log('Starting Google OAuth sign in...');
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -205,11 +201,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) {
         set({ loading: false });
+        console.error('Google OAuth error:', error);
         throw error;
       }
 
+      console.log('Google OAuth initiated successfully');
       // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
-      // Don't set loading to false here as it will be handled by the auth state change
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
@@ -221,16 +218,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUpWithGoogle: async () => {
     set({ loading: true });
     try {
-      // Get current URL without any hash fragments
-      const currentUrl = new URL(window.location.href);
-      const redirectUrl = `${currentUrl.origin}${currentUrl.pathname}`;
-      
-      console.log('Google OAuth redirect URL:', redirectUrl);
+      console.log('Starting Google OAuth sign up...');
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -240,11 +233,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) {
         set({ loading: false });
+        console.error('Google OAuth error:', error);
         throw error;
       }
 
+      console.log('Google OAuth initiated successfully');
       // OAuth flow will handle the redirect, loading state will be managed by onAuthStateChange
-      // Don't set loading to false here as it will be handled by the auth state change
       return { user: null, error: null };
     } catch (error) {
       set({ loading: false });
