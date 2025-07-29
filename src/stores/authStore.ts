@@ -419,52 +419,89 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 }));
 
 // Initialize auth state
+let lastSessionState: string | null = null;
+let authStateChangeTimeout: NodeJS.Timeout | null = null;
+
 supabase.auth.onAuthStateChange((event, session) => {
   const { loadProfile } = useAuthStore.getState();
   
-  console.log('=== AUTH STATE CHANGE DEBUG ===');
-  console.log('Event:', event);
-  console.log('Session exists:', !!session);
-  console.log('User exists:', !!session?.user);
-  console.log('User email:', session?.user?.email);
-  console.log('Email confirmed:', session?.user?.email_confirmed_at);
-  console.log('App metadata:', session?.user?.app_metadata);
-  console.log('User metadata:', session?.user?.user_metadata);
-  console.log('Identities:', session?.user?.identities);
-  console.log('Current URL:', window.location.href);
-  console.log('Current hash:', window.location.hash);
-  
-  // Check multiple possible locations for provider information
-  const isGoogleProvider = 
-    session?.user?.app_metadata?.provider === 'google' ||
-    session?.user?.app_metadata?.providers?.includes('google') ||
-    session?.user?.user_metadata?.provider === 'google' ||
-    (session?.user?.identities && session.user.identities.some(identity => identity.provider === 'google'));
-  
-  const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
-  const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
-  
-  console.log('Is Google provider:', isGoogleProvider);
-  console.log('Is email confirmed:', isEmailConfirmed);
-  console.log('Should authenticate:', shouldAuthenticate);
-  console.log('=== END DEBUG ===');
-  
-  useAuthStore.setState({
-    user: session?.user ?? null,
-    session,
-    isAuthenticated: shouldAuthenticate,
-    loading: false
+  // Create a unique identifier for this session state
+  const currentSessionState = JSON.stringify({
+    userId: session?.user?.id,
+    isAuthenticated: !!session?.user,
+    event
   });
-
-  if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
-    console.log('Loading profile for authenticated user');
-    setTimeout(() => {
-      loadProfile();
-    }, 0);
-  } else {
-    console.log('Clearing profile - user not authenticated');
-    useAuthStore.setState({ profile: null });
+  
+  // Prevent duplicate processing of the same state
+  if (currentSessionState === lastSessionState && event !== 'SIGNED_OUT') {
+    console.log('Skipping duplicate auth state change');
+    return;
   }
+  
+  lastSessionState = currentSessionState;
+  
+  // Clear any pending auth state changes to prevent race conditions
+  if (authStateChangeTimeout) {
+    clearTimeout(authStateChangeTimeout);
+  }
+  
+  // Debounce auth state changes to prevent rapid firing
+  authStateChangeTimeout = setTimeout(() => {
+    console.log('=== AUTH STATE CHANGE DEBUG ===');
+    console.log('Event:', event);
+    console.log('Session exists:', !!session);
+    console.log('User exists:', !!session?.user);
+    console.log('User email:', session?.user?.email);
+    console.log('Email confirmed:', session?.user?.email_confirmed_at);
+    console.log('App metadata:', session?.user?.app_metadata);
+    console.log('User metadata:', session?.user?.user_metadata);
+    console.log('Identities:', session?.user?.identities);
+    console.log('Current URL:', window.location.href);
+    console.log('Current hash:', window.location.hash);
+    
+    // Check multiple possible locations for provider information
+    const isGoogleProvider = 
+      session?.user?.app_metadata?.provider === 'google' ||
+      session?.user?.app_metadata?.providers?.includes('google') ||
+      session?.user?.user_metadata?.provider === 'google' ||
+      (session?.user?.identities && session.user.identities.some(identity => identity.provider === 'google'));
+    
+    const isEmailConfirmed = session?.user?.email_confirmed_at !== null;
+    const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
+    
+    console.log('Is Google provider:', isGoogleProvider);
+    console.log('Is email confirmed:', isEmailConfirmed);
+    console.log('Should authenticate:', shouldAuthenticate);
+    console.log('=== END DEBUG ===');
+    
+    // Get current state to prevent unnecessary updates
+    const currentState = useAuthStore.getState();
+    
+    // Only update state if it actually changed
+    if (
+      currentState.user?.id !== session?.user?.id ||
+      currentState.isAuthenticated !== shouldAuthenticate ||
+      currentState.loading !== false
+    ) {
+      useAuthStore.setState({
+        user: session?.user ?? null,
+        session,
+        isAuthenticated: shouldAuthenticate,
+        loading: false
+      });
+    }
+
+    if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
+      console.log('Loading profile for authenticated user');
+      // Small delay to ensure state is fully updated
+      setTimeout(() => {
+        loadProfile();
+      }, 100);
+    } else if (event === 'SIGNED_OUT' || !shouldAuthenticate) {
+      console.log('Clearing profile - user not authenticated');
+      useAuthStore.setState({ profile: null });
+    }
+  }, 50); // 50ms debounce
 });
 
 // Check for existing session on app start
