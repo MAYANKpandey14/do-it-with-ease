@@ -369,11 +369,15 @@ supabase.auth.onAuthStateChange((event, session) => {
   
   console.log('=== AUTH STATE CHANGE DEBUG ===');
   console.log('Event:', event);
+  console.log('Session exists:', !!session);
+  console.log('User exists:', !!session?.user);
   console.log('User email:', session?.user?.email);
   console.log('Email confirmed:', session?.user?.email_confirmed_at);
   console.log('App metadata:', session?.user?.app_metadata);
   console.log('User metadata:', session?.user?.user_metadata);
-  console.log('Full session:', session);
+  console.log('Identities:', session?.user?.identities);
+  console.log('Current URL:', window.location.href);
+  console.log('Current hash:', window.location.hash);
   
   // Check multiple possible locations for provider information
   const isGoogleProvider = 
@@ -398,10 +402,12 @@ supabase.auth.onAuthStateChange((event, session) => {
   });
 
   if (session?.user && shouldAuthenticate && event !== 'SIGNED_OUT') {
+    console.log('Loading profile for authenticated user');
     setTimeout(() => {
       loadProfile();
     }, 0);
   } else {
+    console.log('Clearing profile - user not authenticated');
     useAuthStore.setState({ profile: null });
   }
 });
@@ -411,10 +417,16 @@ supabase.auth.getSession().then(({ data: { session } }) => {
   const { loadProfile } = useAuthStore.getState();
   
   console.log('=== INITIAL SESSION CHECK ===');
+  console.log('Session exists:', !!session);
   console.log('Session:', session);
+  console.log('Current URL:', window.location.href);
+  console.log('Hash params:', window.location.hash);
+  
   if (session?.user) {
     console.log('User app metadata:', session.user.app_metadata);
     console.log('User identities:', session.user.identities);
+    console.log('User email:', session.user.email);
+    console.log('Email confirmed at:', session.user.email_confirmed_at);
   }
   
   // Check multiple possible locations for provider information
@@ -428,6 +440,7 @@ supabase.auth.getSession().then(({ data: { session } }) => {
   const shouldAuthenticate = !!session?.user && (isGoogleProvider || isEmailConfirmed);
   
   console.log('Initial - Is Google provider:', isGoogleProvider);
+  console.log('Initial - Is email confirmed:', isEmailConfirmed);
   console.log('Initial - Should authenticate:', shouldAuthenticate);
   console.log('=== END INITIAL CHECK ===');
   
@@ -439,6 +452,9 @@ supabase.auth.getSession().then(({ data: { session } }) => {
   });
 
   if (session?.user && shouldAuthenticate) {
+    console.log('Loading profile for initial authenticated user');
     loadProfile();
+  } else {
+    console.log('No initial session or not authenticated');
   }
 });
