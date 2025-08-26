@@ -30,7 +30,6 @@
 - **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
 - **Dark/Light Theme**: Toggle between themes for comfortable viewing
 - **WCAG 2.1 Compliance**: Fully accessible design following web accessibility guidelines
-- **Offline Support**: Continue working even without internet connection
 
 ### 🔐 Security & Privacy
 - **Secure Authentication**: Multi-factor authentication support
@@ -162,12 +161,6 @@ We welcome contributions!
 - Write meaningful commit messages
 - Add tests for new features
 - Update documentation as needed
-
-## 🐛 Known Issues
-
-- Timer reset issue when switching tabs (being addressed)
-- Profile avatar loading optimization needed
-- Mobile responsiveness improvements in progress
 
 ## 📋 Roadmap
 
